@@ -3,9 +3,10 @@
 var curlCommandDiv = document.querySelector( '.js-curl-command' );
 var isPushEnabled = false;
 
-function sendSubscriptionToServer( subscription ) {
+function sendSubscriptionToServer( subscription, action ) {
 	var id = subscription.endpoint.split( 'https://android.googleapis.com/gcm/send/' )[1];
-	fetch( '/api/subscribe', {
+	action = action || 'subscribe';
+	fetch( '/api/' + action, {
 		method: 'post',
 		headers: {
 			'Accept': 'application/json',
@@ -37,9 +38,7 @@ function unsubscribe() {
 					return;
 				}
 
-				// TODO: Make a request to your server to remove
-				// the users data from your data store so you
-				// don't attempt to send them push messages anymore
+				sendSubscriptionToServer( pushSubscription, 'unsubscribe' );
 
 				// We have a subcription, so call unsubscribe on it
 				pushSubscription.unsubscribe().then( function ( successful ) {

@@ -51,6 +51,18 @@ app.post( '/api/broadcast', function ( req, resp ) {
 		} );
 } );
 
+app.post('/api/unsubscribe', function( req, resp ) {
+	resp.setHeader('Content-Type', 'text/plain' );
+	db.del( req.body.id, function ( err ) {
+		if ( err ) {
+			resp.send( 'FAIL' );
+			response.status( 503 );
+		} else {
+			resp.send( 'OK' );
+		}
+	} );
+} );
+
 app.post('/api/subscribe', function( req, resp ) {
 	resp.setHeader('Content-Type', 'text/plain' );
 	db.put( req.body.id, Date.now(), function ( err ) {
