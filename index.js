@@ -2,6 +2,9 @@ var express = require('express');
 var app = express();
 var fetch = require('node-fetch');
 var bodyParser = require('body-parser');
+var level = require('level')
+var db = level('./mydb')
+
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
@@ -26,24 +29,38 @@ app.get('/manifest.json', function ( req, resp ) {
 
 app.post( '/api/broadcast', function ( req, resp ) {
 	console.log( 'broadcasting...' );
-	fetch( 'https://android.googleapis.com/gcm/send', {
-		method: 'post',
-		headers: {
-			'Authorization': "key=" + process.env.GCM_API_KEY,
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify( {
-			"registration_ids": [ req.body.id ]
-		} )
-	} ).then( function ( r ) {
-		console.log( r.status );
-	} );
+	var ids = [];
+	db.createReadStream( {
+			// TODO: Support more than 100 ids.
+			limit: 100
+		} ).on( 'data', function ( data ) {
+			ids.push( data.key );
+		} ).on( 'end', function () {
+			fetch( 'https://android.googleapis.com/gcm/send', {
+				method: 'post',
+				headers: {
+					'Authorization': "key=" + process.env.GCM_API_KEY,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify( {
+					"registration_ids": ids
+				} )
+			} ).then( function ( r ) {
+				console.log( r.status, r.json() );
+			} );
+		} );
 } );
 
 app.post('/api/subscribe', function( req, resp ) {
-	console.log( req.body.id );
 	resp.setHeader('Content-Type', 'text/plain' );
-	resp.send( 'OK' );
+	db.put( req.body.id, Date.now(), function ( err ) {
+		if ( err ) {
+			resp.send( 'FAIL' );
+			response.status( 503 );
+		} else {
+			resp.send( 'OK' );
+		}
+	} );
 });
 
 app.get('/api/articles/tfa', function ( req, resp ) {
