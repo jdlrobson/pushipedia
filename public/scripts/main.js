@@ -3,7 +3,7 @@
 var curlCommandDiv = document.querySelector( '.js-curl-command' );
 var isPushEnabled = false;
 
-function sendSubscriptionToServer( subscription, action ) {
+function sendSubscriptionToServer( subscription, action, feature ) {
 	var id = subscription.endpoint.split( 'https://android.googleapis.com/gcm/send/' )[1];
 	action = action || 'subscribe';
 	fetch( '/api/' + action, {
@@ -13,13 +13,13 @@ function sendSubscriptionToServer( subscription, action ) {
 			'Content-Type': 'application/json'
 		},
 		body: JSON.stringify( {
-			id: id
+			id: id,
+			feature: feature
 		} )
 	} );
 }
 
-function unsubscribe() {
-	var pushButton = document.querySelector( '.js-push-button' );
+function unsubscribe( pushButton, feature ) {
 	pushButton.disabled = true;
 	curlCommandDiv.textContent = '';
 
@@ -38,7 +38,7 @@ function unsubscribe() {
 					return;
 				}
 
-				sendSubscriptionToServer( pushSubscription, 'unsubscribe' );
+				sendSubscriptionToServer( pushSubscription, 'unsubscribe', feature );
 
 				// We have a subcription, so call unsubscribe on it
 				pushSubscription.unsubscribe().then( function ( successful ) {
@@ -61,10 +61,9 @@ function unsubscribe() {
 	} );
 }
 
-function subscribe() {
+function subscribe( pushButton, feature ) {
 	// Disable the button so it can't be changed while
 	// we process the permission request
-	var pushButton = document.querySelector( '.js-push-button' );
 	pushButton.disabled = true;
 
 	navigator.serviceWorker.ready.then( function ( serviceWorkerRegistration ) {
@@ -80,7 +79,7 @@ function subscribe() {
 				// TODO: Send the subscription subscription.endpoint
 				// to your server and save it to send a push message
 				// at a later date
-				return sendSubscriptionToServer( subscription );
+				return sendSubscriptionToServer( subscription, 'subscribe', feature );
 			})
 			.catch( function ( e ) {
 				if ( Notification.permission === 'denied' ) {
@@ -103,7 +102,8 @@ function subscribe() {
 }
 
 // Once the service worker is registered set the initial state
-function initialiseState() {
+
+function initialiseState( pushButton, feature ) {
 	// Are Notifications supported in the service worker?
 	if ( !( 'showNotification' in ServiceWorkerRegistration.prototype ) ) {
 		console.log( 'Notifications aren\'t supported.' );
@@ -141,7 +141,7 @@ function initialiseState() {
 				}
 
 				// Keep your server in sync with the latest subscription
-				sendSubscriptionToServer( subscription );
+				sendSubscriptionToServer( subscription, 'subscribe', feature );
 
 				// Set your UI to show they have subscribed for
 				// push messages
@@ -156,11 +156,13 @@ function initialiseState() {
 
 window.addEventListener( 'load', function () {
 	var pushButton = document.querySelector( '.js-push-button' );
+	var feature = pushButton.getAttribute( 'data-feature' );
+
 	pushButton.addEventListener( 'click', function () {
 		if ( isPushEnabled ) {
-			unsubscribe();
+			unsubscribe( this, feature );
 		} else {
-			subscribe();
+			subscribe( this, feature );
 		}
 	} );
 
@@ -168,7 +170,9 @@ window.addEventListener( 'load', function () {
 	// enhance and add push messaging support, otherwise continue without it.
 	if ( 'serviceWorker' in navigator ) {
 		navigator.serviceWorker.register( '/service-worker.js' )
-		.then( initialiseState );
+		.then( function () {
+			initialiseState( pushButton, feature );
+		} );
 	} else {
 		console.log( 'Service workers aren\'t supported in this browser.' );
 	}

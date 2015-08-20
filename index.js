@@ -27,14 +27,21 @@ app.get('/manifest.json', function ( req, resp ) {
 	} );
 });
 
-app.post( '/api/broadcast', function ( req, resp ) {
-	console.log( 'broadcasting...' );
+function broadcast( feature ) {
 	var ids = [];
 	db.createReadStream( {
+			gt: feature + '!',
+			 // stop at the last key with the prefix
+			lt: feature + '\xFF',
 			// TODO: Support more than 100 ids.
 			limit: 100
 		} ).on( 'data', function ( data ) {
-			ids.push( data.key );
+			var id = data.key.split( '!' )[ 1 ];
+			if ( !id ) {
+				// bad data so cleanup
+				db.del( data.key );
+			}
+			ids.push( id );
 		} ).on( 'end', function () {
 			fetch( 'https://android.googleapis.com/gcm/send', {
 				method: 'post',
@@ -49,11 +56,24 @@ app.post( '/api/broadcast', function ( req, resp ) {
 				console.log( r.status, r.json() );
 			} );
 		} );
+}
+app.post( '/api/broadcast', function ( req, resp ) {
+	console.log( 'broadcasting...' );
+	broadcast( 'tfa' );
+	resp.setHeader('Content-Type', 'text/plain' );
+	resp.status( 200 );
+	resp.send( 'OK' );
 } );
 
 app.post('/api/unsubscribe', function( req, resp ) {
+	var feature = req.body.feature;
+	var id = req.body.id;
+	if ( !feature || !id ) {
+		resp.status( 400 );
+		resp.send( 'FAIL' );
+	}
 	resp.setHeader('Content-Type', 'text/plain' );
-	db.del( req.body.id, function ( err ) {
+	db.del( feature + '!' + req.body.id, function ( err ) {
 		if ( err ) {
 			resp.send( 'FAIL' );
 			resp.status( 503 );
@@ -64,8 +84,14 @@ app.post('/api/unsubscribe', function( req, resp ) {
 } );
 
 app.post('/api/subscribe', function( req, resp ) {
+	var feature = req.body.feature;
+	var id = req.body.id;
+	if ( !feature || !id ) {
+		resp.status( 400 );
+		resp.send( 'FAIL' );
+	}
 	resp.setHeader('Content-Type', 'text/plain' );
-	db.put( req.body.id, Date.now(), function ( err ) {
+	db.put( feature + '!' + id, Date.now(), function ( err ) {
 		if ( err ) {
 			resp.send( 'FAIL' );
 			resp.status( 503 );
