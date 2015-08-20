@@ -10,15 +10,13 @@ self.addEventListener( 'push', function( event ) {
 		}
 		resp.json().then( function ( page ) {
 			console.log( 'sending notification...');
-				// wait until promise	 gets fulfilled
-			event.waitUntil(
-				self.registration.showNotification( page.title, {
-					body: page.extract,
-					icon: icon,
-					tag: tag,
-					data: 'https://en.wikipedia.org/wiki/' + page.title
-			 } )
-			);
+			// wait until promise	 gets fulfilled
+			self.registration.showNotification( page.title, {
+				body: page.extract,
+				icon: icon,
+				tag: tag,
+				data: 'https://en.wikipedia.org/wiki/' + page.title
+		 } )
 		} );
 	} );
 } );
