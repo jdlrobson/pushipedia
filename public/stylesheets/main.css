@@ -90,7 +90,12 @@ button, input, textarea, select { font-family: sans-serif; }
 .separator:after {
   left: 55%;
 }
-
+.error {
+  display: block;
+  font-size: 2em;
+  color: #803535;
+  margin-bottom: 1em;
+}
 
 /* Larger than mobile */
 @media (min-width: 400px) {}

@@ -188,6 +188,7 @@ function initPushButton( pushButton ) {
 }
 
 window.addEventListener( 'load', function () {
+	var i, features;
 	// Check that service workers are supported, if so, progressively
 	// enhance and add push messaging support, otherwise continue without it.
 	if ( 'serviceWorker' in navigator ) {
@@ -196,6 +197,12 @@ window.addEventListener( 'load', function () {
 			initPushButton( btn );
 		} );
 	} else {
+		features = document.getElementsByClassName( 'feature' );
+		// purposely don't use forEach in case there browser completely sucks.
+		for ( i = 0; i < features.length; i++ ) {
+			features[i].setAttribute( 'style', 'opacity:0.5');
+		}
+		document.getElementById( 'browser-error' ).setAttribute( 'style', 'display:block;');
 		console.log( 'Service workers aren\'t supported in this browser.' );
 	}
 } );
