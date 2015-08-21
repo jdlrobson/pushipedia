@@ -11,8 +11,8 @@ self.addEventListener( 'push', function( event ) {
 		resp.json().then( function ( page ) {
 			console.log( 'sending notification...');
 			// wait until promise	 gets fulfilled
-			self.registration.showNotification( page.title, {
-				body: page.extract,
+			self.registration.showNotification( "Photo of the day.", {
+				body: "The latest photo of the day is now available for your viewing pleasure. What delight awaits you?",
 				icon: icon,
 				tag: tag,
 				data: 'https://commons.wikimedia.org/wiki/' + page.title
