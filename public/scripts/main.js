@@ -99,6 +99,9 @@ WikiWorker.prototype.subscribe = function ( feature ) {
 }
 
 WikiWorker.prototype.toggleSubscription = function ( feature ) {
+	if ( Notification.permission !== 'granted' ) {
+		this.pushButton.textContent = 'Permission needed to enable push messages';
+	}
 	if ( this.isEnabled ) {
 		this.unsubscribe( feature );
 	} else {
