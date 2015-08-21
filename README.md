@@ -17,6 +17,11 @@ $ npm start
 
 Your app should now be running on [localhost:5000](http://localhost:5000/).
 
+Once subscribed to a notification trigger it with
+```sh
+curl --request POST http://localhost:8142/api/broadcast
+```
+
 ## Deploying to Heroku
 
 ```
