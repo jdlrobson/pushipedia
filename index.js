@@ -27,6 +27,21 @@ app.get('/manifest.json', function ( req, resp ) {
 	} );
 });
 
+function ping( ids ) {
+	fetch( 'https://android.googleapis.com/gcm/send', {
+		method: 'post',
+		headers: {
+			'Authorization': "key=" + process.env.GCM_API_KEY,
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify( {
+			"registration_ids": ids
+		} )
+	} ).then( function ( r ) {
+		console.log( r.status, r.json() );
+	} );
+}
+
 function broadcast( feature ) {
 	var ids = [];
 	db.createReadStream( {
@@ -43,18 +58,7 @@ function broadcast( feature ) {
 			}
 			ids.push( id );
 		} ).on( 'end', function () {
-			fetch( 'https://android.googleapis.com/gcm/send', {
-				method: 'post',
-				headers: {
-					'Authorization': "key=" + process.env.GCM_API_KEY,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify( {
-					"registration_ids": ids
-				} )
-			} ).then( function ( r ) {
-				console.log( r.status, r.json() );
-			} );
+			ping( ids );
 		} );
 }
 app.post( '/api/broadcast', function ( req, resp ) {
@@ -64,6 +68,19 @@ app.post( '/api/broadcast', function ( req, resp ) {
 	resp.setHeader('Content-Type', 'text/plain' );
 	resp.status( 200 );
 	resp.send( 'OK' );
+} );
+
+app.post( '/api/preview', function ( req, resp ) {
+	var id = req.body.id;
+	if ( !id ) {
+		resp.status( 400 );
+		resp.send( 'FAIL' );
+	} else {
+		resp.setHeader('Content-Type', 'text/plain' );
+		ping( [ id ] );
+		resp.status( 200 );
+		resp.send( 'OK' );
+	}
 } );
 
 app.post('/api/unsubscribe', function( req, resp ) {

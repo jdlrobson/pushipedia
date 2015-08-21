@@ -1,7 +1,11 @@
 'use strict';
 
+function getSubscriptionId( endpoint ) {
+	return endpoint.split( 'https://android.googleapis.com/gcm/send/' )[1];
+}
+
 function sendSubscriptionToServer( subscription, action, feature ) {
-	var id = subscription.endpoint.split( 'https://android.googleapis.com/gcm/send/' )[1];
+	var id = getSubscriptionId( subscription.endpoint );
 	action = action || 'subscribe';
 	fetch( '/api/' + action, {
 		method: 'post',
@@ -41,6 +45,7 @@ WikiWorker.prototype.unsubscribe = function ( feature ) {
 					pushButton.disabled = false;
 					pushButton.textContent = 'Enable Push Messages';
 					wikiWorker.isEnabled = false;
+					wikiWorker.disablePreview();
 				} ).catch( function ( e ) {
 					// We failed to unsubscribe, this can lead to
 					// an unusual state, so may be best to remove
@@ -57,9 +62,41 @@ WikiWorker.prototype.unsubscribe = function ( feature ) {
 	} );
 };
 
+WikiWorker.prototype.disablePreview = function () {
+	if ( this.previewButton ) {
+		this.previewButton.parentNode.removeChild( this.previewButton );
+	}
+	this.previewButton = undefined;
+};
+
+WikiWorker.prototype.showPreviewButton = function ( endpoint ) {
+	var pushButton = this.pushButton;
+	var previewButton = this.previewButton;
+	if ( !previewButton ) {
+		previewButton = document.createElement( 'button' );
+		previewButton.innerText = 'Preview';
+		pushButton.parentNode.insertBefore( previewButton, pushButton.nextSibling );
+		previewButton.addEventListener( 'click', function () {
+			this.disabled = true;
+			fetch( '/api/preview', {
+				method: 'post',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify( {
+					id: getSubscriptionId( endpoint )
+				} )
+			} );
+		} );
+		this.previewButton = previewButton;
+	}
+};
+
 WikiWorker.prototype.subscribe = function ( feature ) {
 	var wikiWorker = this;
 	var pushButton = this.pushButton;
+
 	// Disable the button so it can't be changed while
 	// we process the permission request
 	pushButton.disabled = true;
@@ -72,6 +109,7 @@ WikiWorker.prototype.subscribe = function ( feature ) {
 				wikiWorker.isEnabled = true;
 				pushButton.textContent = 'Disable Push Messages';
 				pushButton.disabled = false;
+				wikiWorker.showPreviewButton( subscription.endpoint );
 
 				// TODO: Send the subscription subscription.endpoint
 				// to your server and save it to send a push message
@@ -165,6 +203,7 @@ function WikiWorker( serviceWorkerRegistration, pushButton, feature ) {
 			// push messages
 			pushButton.textContent = 'Disable Push Messages';
 			wikiWorker.isEnabled = true;
+			wikiWorker.showPreviewButton( subscription.endpoint );
 		} )
 		.catch( function ( err )  {
 			console.log( 'Error during getSubscription()', err );
