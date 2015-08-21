@@ -60,6 +60,7 @@ function broadcast( feature ) {
 app.post( '/api/broadcast', function ( req, resp ) {
 	console.log( 'broadcasting...' );
 	broadcast( 'tfa' );
+	broadcast( 'potd' );
 	resp.setHeader('Content-Type', 'text/plain' );
 	resp.status( 200 );
 	resp.send( 'OK' );
@@ -101,14 +102,48 @@ app.post('/api/subscribe', function( req, resp ) {
 	} );
 });
 
+app.get('/api/articles/potd', function ( req, resp ) {
+	var d = new Date();
+	var month = d.getMonth() + 1;
+	var day = d.getDate();
+	day = day < 10 ? '0' + day : day;
+	month = month < 10 ? '0' + month : month;
+	var date = d.getFullYear() + '-' +  month + '-' + day;
+	var qs = 'action=query&prop=images&format=json&formatversion=2&titles=Template%3APotd%2F' + date;
+	fetch( 'https://commons.wikimedia.org/w/api.php?' + qs ).then( function ( wikiResp ) {
+		if (wikiResp.status !== 200) {
+			resp.status( 503 );
+		}
+		wikiResp.json().then( function ( data ) {
+			var page, images,
+				pages = data.query.pages;
+			if ( pages.length ) {
+				images = pages[0].images;
+				if ( images.length ) {
+					console.log(images[0]);
+					respondWithJsonCard( resp, images[0].title );
+				} else {
+					resp.status( 500 );
+				}
+			} else {
+				resp.status( 500 );
+			}
+		} );
+	} );
+} );
+
 app.get('/api/articles/tfa', function ( req, resp ) {
 	console.log( 'get tfa' );
 	var d = new Date();
 	var month = [ 'January', 'February', 'March', 'April', 'May', 'June',
 		'July', 'August', 'October', 'November', 'December' ][ d.getMonth() ];
 	var pageTitle = 'Wikipedia:Today%27s_featured_article/' + month + '_' + d.getDate() + ',_' + d.getFullYear();
-	var qs = 'action=query&prop=extracts&format=json&formatversion=2&explaintext=&titles=' + pageTitle;
+	respondWithJsonCard( resp, pageTitle );
+} );
 
+function respondWithJsonCard( resp, pageTitle ) {
+	var qs = 'action=query&prop=pageimages|extracts&piprop=thumbnail&format=json&formatversion=2&explaintext=&titles=' + pageTitle;
+	console.log( 'hey', 'https://en.wikipedia.org/w/api.php?' + qs );
 	fetch( 'https://en.wikipedia.org/w/api.php?' + qs ).then( function ( wikiResp ) {
 		if (wikiResp.status !== 200) {
 			resp.status( 503 );
@@ -125,7 +160,7 @@ app.get('/api/articles/tfa', function ( req, resp ) {
 			}
 		} );
 	} );
-});
+}
 
 app.listen( app.get('port'), function() {
   console.log('Node app is running on port', app.get('port'));
