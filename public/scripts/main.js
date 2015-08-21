@@ -160,24 +160,33 @@ function WikiWorker( serviceWorkerRegistration, pushButton, feature ) {
 		} );
 }
 
-window.addEventListener( 'load', function () {
-	var pushButton = document.querySelector( '.js-push-button' );
-	var feature = pushButton.getAttribute( 'data-feature' );
+function initPushButton( pushButton ) {
+	var feature = pushButton.getAttribute( 'data-feature' ),
+		scope = '/workers/' + feature + '/';
 
 	pushButton.addEventListener( 'click', function () {
 		if ( isPushEnabled ) {
-			pushButton.worker.unsubscribe( this, feature );
+			this.worker.unsubscribe( this, feature );
 		} else {
-			pushButton.worker.subscribe( this, feature );
+			this.worker.subscribe( this, feature );
 		}
 	} );
 
+	navigator.serviceWorker.register( scope + 'worker.js', {
+		scope: scope
+	} )
+	.then( function ( r ) {
+		pushButton.worker = new WikiWorker( r, pushButton, feature );
+	} );
+}
+
+window.addEventListener( 'load', function () {
 	// Check that service workers are supported, if so, progressively
 	// enhance and add push messaging support, otherwise continue without it.
 	if ( 'serviceWorker' in navigator ) {
-		navigator.serviceWorker.register( '/service-worker.js' )
-		.then( function ( registration ) {
-			pushButton.worker = new WikiWorker( registration, pushButton, feature );
+		var btns = document.querySelectorAll( '.js-push-button' );
+		Array.prototype.forEach.call( btns, function ( btn ) {
+			initPushButton( btn );
 		} );
 	} else {
 		console.log( 'Service workers aren\'t supported in this browser.' );
