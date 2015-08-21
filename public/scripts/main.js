@@ -19,11 +19,11 @@ function sendSubscriptionToServer( subscription, action, feature ) {
 	} );
 }
 
-function unsubscribe( pushButton, feature ) {
+WikiWorker.prototype.unsubscribe = function ( pushButton, feature ) {
 	pushButton.disabled = true;
 	curlCommandDiv.textContent = '';
 
-	navigator.serviceWorker.ready.then( function ( serviceWorkerRegistration ) {
+	this.getRegisteredWorker().then( function ( serviceWorkerRegistration ) {
 		// To unsubscribe from push messaging, you need get the
 		// subcription object, which you can call unsubscribe() on.
 		serviceWorkerRegistration.pushManager.getSubscription().then(
@@ -59,14 +59,14 @@ function unsubscribe( pushButton, feature ) {
 					'push messaging.', e );
 			} );
 	} );
-}
+};
 
-function subscribe( pushButton, feature ) {
+WikiWorker.prototype.subscribe = function ( pushButton, feature ) {
 	// Disable the button so it can't be changed while
 	// we process the permission request
 	pushButton.disabled = true;
 
-	navigator.serviceWorker.ready.then( function ( serviceWorkerRegistration ) {
+	this.getRegisteredWorker().then( function ( serviceWorkerRegistration ) {
 		serviceWorkerRegistration.pushManager.subscribe( {
 			userVisibleOnly: true
 		} )
@@ -101,9 +101,19 @@ function subscribe( pushButton, feature ) {
 	} );
 }
 
+WikiWorker.prototype.getRegisteredWorker = function () {
+	var wikiworker = this;
+	var promise = new Promise( function( resolve, reject ) {
+	  resolve( wikiworker.registration );
+	} );
+	return promise;
+};
+
 // Once the service worker is registered set the initial state
 
-function initialiseState( pushButton, feature ) {
+function WikiWorker( serviceWorkerRegistration, pushButton, feature ) {
+	this.registration = serviceWorkerRegistration;
+
 	// Are Notifications supported in the service worker?
 	if ( !( 'showNotification' in ServiceWorkerRegistration.prototype ) ) {
 		console.log( 'Notifications aren\'t supported.' );
@@ -124,34 +134,30 @@ function initialiseState( pushButton, feature ) {
 		return;
 	}
 
-	// We need the service worker registration to check for a subscription
-	navigator.serviceWorker.ready.then( function ( serviceWorkerRegistration ) {
-		// Do we already have a push message subscription?
-		serviceWorkerRegistration.pushManager.getSubscription()
-			.then( function ( subscription ) {
-				// Enable any UI which subscribes / unsubscribes from
-				// push messages.
-				var pushButton = document.querySelector( '.js-push-button' );
-				pushButton.disabled = false;
+	// Do we already have a push message subscription?
+	serviceWorkerRegistration.pushManager.getSubscription()
+		.then( function ( subscription ) {
+			// Enable any UI which subscribes / unsubscribes from
+			// push messages.
+			pushButton.disabled = false;
 
-				if ( !subscription ) {
-					// We aren’t subscribed to push, so set UI
-					// to allow the user to enable push
-					return;
-				}
+			if ( !subscription ) {
+				// We aren’t subscribed to push, so set UI
+				// to allow the user to enable push
+				return;
+			}
 
-				// Keep your server in sync with the latest subscription
-				sendSubscriptionToServer( subscription, 'subscribe', feature );
+			// Keep your server in sync with the latest subscription
+			sendSubscriptionToServer( subscription, 'subscribe', feature );
 
-				// Set your UI to show they have subscribed for
-				// push messages
-				pushButton.textContent = 'Disable Push Messages';
-				isPushEnabled = true;
-			} )
-			.catch( function ( err )  {
-				console.log( 'Error during getSubscription()', err );
-			} );
-	} );
+			// Set your UI to show they have subscribed for
+			// push messages
+			pushButton.textContent = 'Disable Push Messages';
+			isPushEnabled = true;
+		} )
+		.catch( function ( err )  {
+			console.log( 'Error during getSubscription()', err );
+		} );
 }
 
 window.addEventListener( 'load', function () {
@@ -160,9 +166,9 @@ window.addEventListener( 'load', function () {
 
 	pushButton.addEventListener( 'click', function () {
 		if ( isPushEnabled ) {
-			unsubscribe( this, feature );
+			pushButton.worker.unsubscribe( this, feature );
 		} else {
-			subscribe( this, feature );
+			pushButton.worker.subscribe( this, feature );
 		}
 	} );
 
@@ -170,8 +176,8 @@ window.addEventListener( 'load', function () {
 	// enhance and add push messaging support, otherwise continue without it.
 	if ( 'serviceWorker' in navigator ) {
 		navigator.serviceWorker.register( '/service-worker.js' )
-		.then( function () {
-			initialiseState( pushButton, feature );
+		.then( function ( registration ) {
+			pushButton.worker = new WikiWorker( registration, pushButton, feature );
 		} );
 	} else {
 		console.log( 'Service workers aren\'t supported in this browser.' );
