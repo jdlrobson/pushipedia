@@ -56,7 +56,7 @@ app.post('/api/unsubscribe', function( req, resp ) {
 	db.del( req.body.id, function ( err ) {
 		if ( err ) {
 			resp.send( 'FAIL' );
-			response.status( 503 );
+			resp.status( 503 );
 		} else {
 			resp.send( 'OK' );
 		}
@@ -68,7 +68,7 @@ app.post('/api/subscribe', function( req, resp ) {
 	db.put( req.body.id, Date.now(), function ( err ) {
 		if ( err ) {
 			resp.send( 'FAIL' );
-			response.status( 503 );
+			resp.status( 503 );
 		} else {
 			resp.send( 'OK' );
 		}
@@ -85,7 +85,7 @@ app.get('/api/articles/tfa', function ( req, resp ) {
 
 	fetch( 'https://en.wikipedia.org/w/api.php?' + qs ).then( function ( wikiResp ) {
 		if (wikiResp.status !== 200) {
-			response.status( 503 );
+			resp.status( 503 );
 		}
 		wikiResp.json().then( function ( data ) {
 			var page,
