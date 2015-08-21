@@ -1,8 +1,5 @@
 'use strict';
 
-var curlCommandDiv = document.querySelector( '.js-curl-command' );
-var isPushEnabled = false;
-
 function sendSubscriptionToServer( subscription, action, feature ) {
 	var id = subscription.endpoint.split( 'https://android.googleapis.com/gcm/send/' )[1];
 	action = action || 'subscribe';
@@ -19,9 +16,10 @@ function sendSubscriptionToServer( subscription, action, feature ) {
 	} );
 }
 
-WikiWorker.prototype.unsubscribe = function ( pushButton, feature ) {
+WikiWorker.prototype.unsubscribe = function ( feature ) {
+	var wikiWorker = this;
+	var pushButton = this.pushButton;
 	pushButton.disabled = true;
-	curlCommandDiv.textContent = '';
 
 	this.getRegisteredWorker().then( function ( serviceWorkerRegistration ) {
 		// To unsubscribe from push messaging, you need get the
@@ -30,9 +28,7 @@ WikiWorker.prototype.unsubscribe = function ( pushButton, feature ) {
 			function ( pushSubscription ) {
 				// Check we have a subscription to unsubscribe
 				if (!pushSubscription) {
-					// No subscription object, so set the state
-					// to allow the user to subscribe to push
-					isPushEnabled = false;
+					wikiWorker.isEnabled = false;
 					pushButton.disabled = false;
 					pushButton.textContent = 'Enable Push Messages';
 					return;
@@ -44,7 +40,7 @@ WikiWorker.prototype.unsubscribe = function ( pushButton, feature ) {
 				pushSubscription.unsubscribe().then( function ( successful ) {
 					pushButton.disabled = false;
 					pushButton.textContent = 'Enable Push Messages';
-					isPushEnabled = false;
+					wikiWorker.isEnabled = false;
 				} ).catch( function ( e ) {
 					// We failed to unsubscribe, this can lead to
 					// an unusual state, so may be best to remove
@@ -61,7 +57,9 @@ WikiWorker.prototype.unsubscribe = function ( pushButton, feature ) {
 	} );
 };
 
-WikiWorker.prototype.subscribe = function ( pushButton, feature ) {
+WikiWorker.prototype.subscribe = function ( feature ) {
+	var wikiWorker = this;
+	var pushButton = this.pushButton;
 	// Disable the button so it can't be changed while
 	// we process the permission request
 	pushButton.disabled = true;
@@ -71,8 +69,7 @@ WikiWorker.prototype.subscribe = function ( pushButton, feature ) {
 			userVisibleOnly: true
 		} )
 			.then( function ( subscription ) {
-				// The subscription was successful
-				isPushEnabled = true;
+				wikiWorker.isEnabled = true;
 				pushButton.textContent = 'Disable Push Messages';
 				pushButton.disabled = false;
 
@@ -101,6 +98,14 @@ WikiWorker.prototype.subscribe = function ( pushButton, feature ) {
 	} );
 }
 
+WikiWorker.prototype.toggleSubscription = function ( feature ) {
+	if ( this.isEnabled ) {
+		this.unsubscribe( feature );
+	} else {
+		this.subscribe( feature );
+	}
+};
+
 WikiWorker.prototype.getRegisteredWorker = function () {
 	var wikiworker = this;
 	var promise = new Promise( function( resolve, reject ) {
@@ -112,7 +117,10 @@ WikiWorker.prototype.getRegisteredWorker = function () {
 // Once the service worker is registered set the initial state
 
 function WikiWorker( serviceWorkerRegistration, pushButton, feature ) {
+	var wikiWorker = this;
+
 	this.registration = serviceWorkerRegistration;
+	this.pushButton = pushButton;
 
 	// Are Notifications supported in the service worker?
 	if ( !( 'showNotification' in ServiceWorkerRegistration.prototype ) ) {
@@ -153,7 +161,7 @@ function WikiWorker( serviceWorkerRegistration, pushButton, feature ) {
 			// Set your UI to show they have subscribed for
 			// push messages
 			pushButton.textContent = 'Disable Push Messages';
-			isPushEnabled = true;
+			wikiWorker.isEnabled = true;
 		} )
 		.catch( function ( err )  {
 			console.log( 'Error during getSubscription()', err );
@@ -165,11 +173,7 @@ function initPushButton( pushButton ) {
 		scope = '/workers/' + feature + '/';
 
 	pushButton.addEventListener( 'click', function () {
-		if ( isPushEnabled ) {
-			this.worker.unsubscribe( this, feature );
-		} else {
-			this.worker.subscribe( this, feature );
-		}
+		this.worker.toggleSubscription( feature );
 	} );
 
 	navigator.serviceWorker.register( scope + 'worker.js', {
