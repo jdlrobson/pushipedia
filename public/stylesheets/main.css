@@ -74,6 +74,11 @@ button, input, textarea, select { font-family: sans-serif; }
 .js-push-button {
 	margin-right: 8px;
 }
+.footer {
+  margin-top: 4em;
+  border-top: solid 1px lightgray;
+  padding-top: 1em;
+}
 .separator {
   margin-bottom: 1.5rem;
   color: gray;
