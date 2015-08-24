@@ -122,13 +122,11 @@ WikiWorker.prototype.subscribe = function ( feature ) {
 					// means we failed to subscribe and the user will need
 					// to manually change the notification permission to
 					// subscribe to push messages
-					console.log( 'Permission for Notifications was denied' );
 					pushButton.disabled = true;
 				} else {
 					// A problem occurred with the subscription, this can
 					// often be down to an issue or lack of the gcm_sender_id
 					// and / or gcm_user_visible_only
-					console.log( 'Unable to subscribe to push.', e );
 					pushButton.disabled = false;
 					pushButton.textContent = 'Enable Push Messages';
 				}
@@ -165,7 +163,6 @@ function WikiWorker( serviceWorkerRegistration, pushButton, feature ) {
 
 	// Are Notifications supported in the service worker?
 	if ( !( 'showNotification' in ServiceWorkerRegistration.prototype ) ) {
-		console.log( 'Notifications aren\'t supported.' );
 		return;
 	}
 
@@ -173,13 +170,11 @@ function WikiWorker( serviceWorkerRegistration, pushButton, feature ) {
 	// If its denied, it's a permanent block until the
 	// user changes the permission
 	if ( Notification.permission === 'denied' ) {
-		console.log( 'The user has blocked notifications.' );
 		return;
 	}
 
 	// Check if push messaging is supported
 	if ( !( 'PushManager' in window ) ) {
-		console.log( 'Push messaging isn\'t supported.' );
 		return;
 	}
 
@@ -242,6 +237,5 @@ window.addEventListener( 'load', function () {
 			features[i].setAttribute( 'style', 'opacity:0.5');
 		}
 		document.getElementById( 'browser-error' ).setAttribute( 'style', 'display:block;');
-		console.log( 'Service workers aren\'t supported in this browser.' );
 	}
 } );

@@ -2,15 +2,11 @@ self.addEventListener( 'push', function( event ) {
   var icon = 'https://en.m.wikipedia.org/static/apple-touch/wikipedia.png';
   var tag = 'wikipedia-reader-notification';
 
-	console.log( 'we are here' );
 	fetch( '/api/articles/tfa' ).then( function ( resp ) {
 		if (resp.status !== 200) {
-			console.log( 'oh no.');
 			throw new Error();
 		}
 		resp.json().then( function ( page ) {
-			console.log( 'sending notification...');
-			// wait until promise	 gets fulfilled
 			self.registration.showNotification( page.title, {
 				body: page.extract,
 				icon: icon,
