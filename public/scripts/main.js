@@ -1,5 +1,4 @@
 'use strict';
-
 function getSubscriptionId( endpoint ) {
 	return endpoint.split( 'https://android.googleapis.com/gcm/send/' )[1];
 }
@@ -161,20 +160,10 @@ function WikiWorker( serviceWorkerRegistration, pushButton, feature ) {
 	this.registration = serviceWorkerRegistration;
 	this.pushButton = pushButton;
 
-	// Are Notifications supported in the service worker?
-	if ( !( 'showNotification' in ServiceWorkerRegistration.prototype ) ) {
-		return;
-	}
-
 	// Check the current Notification permission.
 	// If its denied, it's a permanent block until the
 	// user changes the permission
 	if ( Notification.permission === 'denied' ) {
-		return;
-	}
-
-	// Check if push messaging is supported
-	if ( !( 'PushManager' in window ) ) {
 		return;
 	}
 
@@ -222,10 +211,13 @@ function initPushButton( pushButton ) {
 }
 
 window.addEventListener( 'load', function () {
-	var i, features;
+	var i, features,
+		serviceWorkerSupport = 'serviceWorker' in navigator,
+		pushManagerSupport = 'PushManager' in window,
+	notificationSupport = serviceWorkerSupport && 'showNotification' in ServiceWorkerRegistration.prototype;
 	// Check that service workers are supported, if so, progressively
 	// enhance and add push messaging support, otherwise continue without it.
-	if ( 'serviceWorker' in navigator ) {
+	if ( serviceWorkerSupport && pushManagerSupport && notificationSupport ) {
 		var btns = document.querySelectorAll( '.js-push-button' );
 		Array.prototype.forEach.call( btns, function ( btn ) {
 			initPushButton( btn );
