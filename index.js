@@ -1,9 +1,24 @@
 var express = require('express');
+var basicAuth = require('basic-auth');
 var app = express();
 var fetch = require('node-fetch');
 var bodyParser = require('body-parser');
 var level = require('level')
 var db = level('./mydb')
+
+// Auth
+var auth = function (req, res, next) {
+	var user = basicAuth(req);
+	if (!user || !user.name || !user.pass) {
+		return res.send(401).end();
+	} else {
+		if (user.name === 'broadcaster' && user.pass === process.env.BROADCAST_SECRET) {
+			return next();
+		} else {
+			return res.send(401).end();
+		};
+ }
+};
 
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
@@ -61,7 +76,8 @@ function broadcast( feature ) {
 			ping( ids );
 		} );
 }
-app.post( '/api/broadcast', function ( req, resp ) {
+
+app.post( '/api/broadcast', auth, function ( req, resp ) {
 	console.log( 'broadcasting...' );
 	broadcast( 'tfa' );
 	broadcast( 'potd' );
