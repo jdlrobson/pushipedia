@@ -10,6 +10,7 @@ Make sure you have [Node.js](http://nodejs.org/) and the [Heroku Toolbelt](https
 $ export GCM_API_KEY=<your key>
 $ export GCM_SENDER_ID=<your id>
 $ export BROADCAST_SECRET=<your secret code>
+$ export PUSHIPEDIA_HOST = 'http://localhost:8142';
 $ git clone git@github.com:heroku/node-js-getting-started.git # or clone your own fork
 $ cd node-js-getting-started
 $ npm install
