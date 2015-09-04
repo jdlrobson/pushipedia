@@ -169,7 +169,7 @@ app.get('/api/articles/tfa', function ( req, resp ) {
 	console.log( 'get tfa' );
 	var d = new Date();
 	var month = [ 'January', 'February', 'March', 'April', 'May', 'June',
-		'July', 'August', 'October', 'November', 'December' ][ d.getMonth() ];
+		'July', 'August', 'September', 'October', 'November', 'December' ][ d.getMonth() ];
 	var pageTitle = 'Wikipedia:Today%27s_featured_article/' + month + '_' + d.getDate() + ',_' + d.getFullYear();
 	respondWithJsonCard( resp, pageTitle );
 } );
