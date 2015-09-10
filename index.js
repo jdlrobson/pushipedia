@@ -154,6 +154,7 @@ app.get('/api/articles/potd', function ( req, resp ) {
 				images = pages[0].images;
 				if ( images.length ) {
 					console.log(images[0]);
+					console.log('boom');
 					respondWithJsonCard( resp, images[0].title );
 				} else {
 					resp.status( 500 );
@@ -175,8 +176,7 @@ app.get('/api/articles/tfa', function ( req, resp ) {
 } );
 
 function respondWithJsonCard( resp, pageTitle ) {
-	var qs = 'action=query&prop=pageimages|extracts&piprop=thumbnail&format=json&formatversion=2&explaintext=&titles=' + pageTitle;
-	console.log( 'hey', 'https://en.wikipedia.org/w/api.php?' + qs );
+	var qs = 'action=query&prop=pageimages|extracts&piprop=thumbnail&format=json&formatversion=2&explaintext=&titles=' + encodeURIComponent( pageTitle );
 	fetch( 'https://en.wikipedia.org/w/api.php?' + qs ).then( function ( wikiResp ) {
 		if (wikiResp.status !== 200) {
 			resp.status( 503 );
