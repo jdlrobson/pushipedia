@@ -5,6 +5,7 @@ var fetch = require('node-fetch');
 var bodyParser = require('body-parser');
 var level = require('level')
 var db = level('./mydb')
+var pageviews = require('pageviews');
 
 // Auth
 var auth = function (req, res, next) {
@@ -173,6 +174,32 @@ app.get('/api/articles/tfa', function ( req, resp ) {
 		'July', 'August', 'September', 'October', 'November', 'December' ][ d.getMonth() ];
 	var pageTitle = 'Wikipedia:Today\'s_featured_article/' + month + '_' + d.getDate() + ',_' + d.getFullYear();
 	respondWithJsonCard( resp, pageTitle );
+} );
+
+app.get('/api/articles/yta', function ( req, resp ) {
+	console.log( 'get yta' );
+	var d = new Date();
+	pageviews.getTopPageviews({
+		project: 'en.wikipedia',
+		year: d.getFullYear(),
+		month: d.getMonth() + 1,
+		day: d.getDate() - 1,
+		limit: 15
+	}).then(function(result) {
+		var topArticle;
+		var blacklist = [ 'Main_Page', 'Web_scraping', 'Special:Export/', 'Special:Search', '-' ];
+
+		// filter out
+		result.items[0].articles.forEach( function ( item ) {
+			if ( !topArticle && blacklist.indexOf( item.article ) === -1 ) {
+				topArticle = item;
+			}
+		} );
+
+		respondWithJsonCard( resp, topArticle.article );
+	}).catch(function(error) {
+	  console.log(error);
+	});
 } );
 
 function respondWithJsonCard( resp, pageTitle ) {
