@@ -86,7 +86,9 @@ WikiWorker.prototype.showPreviewButton = function ( endpoint ) {
 				body: JSON.stringify( {
 					id: getSubscriptionId( endpoint )
 				} )
-			} );
+			} ).then( function () {
+				previewButton.disabled = false;
+			});
 		} );
 		this.previewButton = previewButton;
 	}
