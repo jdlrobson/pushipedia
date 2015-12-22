@@ -82,6 +82,7 @@ app.post( '/api/broadcast', auth, function ( req, resp ) {
 	console.log( 'broadcasting...' );
 	broadcast( 'tfa' );
 	broadcast( 'potd' );
+	broadcast( 'yta' );
 	resp.setHeader('Content-Type', 'text/plain' );
 	resp.status( 200 );
 	resp.send( 'OK' );
