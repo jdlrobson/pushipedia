@@ -9,7 +9,7 @@ self.addEventListener( 'push', function( event ) {
 		resp.json().then( function ( page ) {
 			self.registration.showNotification( 'Trending on Wikipedia', {
 				body: page.extract,
-				icon: icon,
+				icon: page.thumbnail ? page.thumbnail.source : icon,
 				tag: tag,
 				data: 'https://en.wikipedia.org/wiki/' + page.title
 		 } )
