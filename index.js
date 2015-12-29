@@ -188,11 +188,17 @@ app.get('/api/articles/yta', function ( req, resp ) {
 		limit: 15
 	}).then(function(result) {
 		var topArticle;
-		var blacklist = [ 'Main_Page', 'Web_scraping', 'Special:Export/', 'Special:Search', '-' ];
+		var blacklist = [ 'Main_Page', 'Web_scraping', 'Special:Export/', 'Special:Search', '-', 'Talk:', 'User:' ];
 
 		// filter out
 		result.items[0].articles.forEach( function ( item ) {
-			if ( !topArticle && blacklist.indexOf( item.article ) === -1 ) {
+			var clean = true;
+			blacklist.forEach( function ( term ) {
+				if ( item.article.indexOf( term ) > -1 ) {
+					clean = false;
+				}
+			} );
+			if ( !topArticle && clean ) {
 				topArticle = item;
 			}
 		} );
