@@ -180,11 +180,14 @@ app.get('/api/articles/tfa', function ( req, resp ) {
 app.get('/api/articles/yta', function ( req, resp ) {
 	console.log( 'get yta' );
 	var d = new Date();
+	var month = d.getMonth() + 1;
+	var day = d.getDate() - 1;
 	pageviews.getTopPageviews({
 		project: 'en.wikipedia',
 		year: d.getFullYear(),
-		month: d.getMonth() + 1,
-		day: d.getDate() - 1,
+		// Hack around https://github.com/tomayac/pageviews.js/issues/1
+		month: month < 10 ? '0' + month : month,
+		day: day < 10 ? '0' + day : day,
 		limit: 15
 	}).then(function(result) {
 		var topArticle;
