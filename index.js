@@ -208,7 +208,9 @@ app.get('/api/articles/yta', function ( req, resp ) {
 
 		respondWithJsonCard( resp, topArticle.article );
 	}).catch(function(error) {
-	  console.log(error);
+		console.log(error);
+		resp.status( 500 );
+		resp.send( 'fail' )
 	});
 } );
 
