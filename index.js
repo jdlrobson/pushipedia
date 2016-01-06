@@ -3,10 +3,9 @@ var basicAuth = require('basic-auth');
 var app = express();
 var fetch = require('node-fetch');
 var bodyParser = require('body-parser');
-var level = require('level')
-var db = level('./mydb')
 var pageviews = require('pageviews');
 var cards = require( './libs/cards' );
+var subscriber = require( './libs/subscriber' );
 
 // Auth
 var auth = function (req, res, next) {
@@ -44,46 +43,11 @@ app.get('/manifest.json', function ( req, resp ) {
 	} );
 });
 
-function ping( ids ) {
-	fetch( 'https://android.googleapis.com/gcm/send', {
-		method: 'post',
-		headers: {
-			'Authorization': "key=" + process.env.GCM_API_KEY,
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify( {
-			"registration_ids": ids
-		} )
-	} ).then( function ( r ) {
-		console.log( r.status, r.json() );
-	} );
-}
-
-function broadcast( feature ) {
-	var ids = [];
-	db.createReadStream( {
-			gt: feature + '!',
-			 // stop at the last key with the prefix
-			lt: feature + '\xFF',
-			// TODO: Support more than 100 ids.
-			limit: 100
-		} ).on( 'data', function ( data ) {
-			var id = data.key.split( '!' )[ 1 ];
-			if ( !id ) {
-				// bad data so cleanup
-				db.del( data.key );
-			}
-			ids.push( id );
-		} ).on( 'end', function () {
-			ping( ids );
-		} );
-}
-
 app.post( '/api/broadcast', auth, function ( req, resp ) {
 	console.log( 'broadcasting...' );
-	broadcast( 'tfa' );
-	broadcast( 'potd' );
-	broadcast( 'yta' );
+	subscriber.broadcast( 'tfa' );
+	subscriber.broadcast( 'potd' );
+	subscriber.broadcast( 'yta' );
 	resp.setHeader('Content-Type', 'text/plain' );
 	resp.status( 200 );
 	resp.send( 'OK' );
@@ -96,7 +60,7 @@ app.post( '/api/preview', function ( req, resp ) {
 		resp.send( 'FAIL' );
 	} else {
 		resp.setHeader('Content-Type', 'text/plain' );
-		ping( [ id ] );
+		subscriber.ping( [ id ] );
 		resp.status( 200 );
 		resp.send( 'OK' );
 	}
@@ -110,14 +74,7 @@ app.post('/api/unsubscribe', function( req, resp ) {
 		resp.send( 'FAIL' );
 	}
 	resp.setHeader('Content-Type', 'text/plain' );
-	db.del( feature + '!' + req.body.id, function ( err ) {
-		if ( err ) {
-			resp.send( 'FAIL' );
-			resp.status( 503 );
-		} else {
-			resp.send( 'OK' );
-		}
-	} );
+	subscriber.unsubscribe( feature, req.body.id );
 } );
 
 app.post('/api/subscribe', function( req, resp ) {
@@ -128,7 +85,8 @@ app.post('/api/subscribe', function( req, resp ) {
 		resp.send( 'FAIL' );
 	}
 	resp.setHeader('Content-Type', 'text/plain' );
-	db.put( feature + '!' + id, Date.now(), function ( err ) {
+
+	subscriber.subscribe( feature, id, function ( err ) {
 		if ( err ) {
 			resp.send( 'FAIL' );
 			resp.status( 503 );
