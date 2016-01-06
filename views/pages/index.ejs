@@ -1,66 +1,11 @@
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-		<title>Wikipedia notifications</title>
-		<link href='//fonts.googleapis.com/css?family=Vollkorn:400,400italic' rel='stylesheet' type='text/css'>
-		<link rel="stylesheet" href="stylesheets/normalize.css">
-		<link rel="stylesheet" href="stylesheets/skeleton.css">
-		<link rel="stylesheet" href="stylesheets/main.css">
-		<link rel="manifest" href="/manifest.json">
-	</head>
+	<%- include partials/head %>
 	<body>
 		<div class="container">
-			<h1>Pushipedia</h1>
-			<h4>Wikipedia notifications</h4>
-			<div id="browser-error" class="error" style="display:none;">
-				Your browser cannot handle the coolness just yet. This demo requires:<br>
-				<a href="http://caniuse.com/#search=ServiceWorker">Service Worker</a>
-				<a href="http://caniuse.com/#feat=notifications">Notifications</a>
-			</div>
-			<div class="feature invert-order-mobile">
-				<div class="image">
-					<img src="images/featured.png" />
-				</div>
-				<div class="text">
-					<h4>Today's featured article</h4>
-					<p>Get notified daily of Wikipedia's featured article. Every day a high quality article manually curated for your reading pleasure.</p>
-					<button class="button-primary js-push-button"
-						class="js-push-button" data-feature="tfa" disabled>Enable Push Messages</button>
-				</div>
-			</div>
-			<div class='separator'>&amp;</div>
-			<div class="feature">
-				<div class="text">
-					<h4>Picture of the day</h4>
-					<p>Receive the Common's picture of the day with a notification. Selected across all the featured pictures in Commons.</p>
-					<button class="button-primary js-push-button"
-						data-feature="potd" disabled>Enable Push Messages</button>
-				</div>
-				<div class="image">
-					<img src="images/pictureoftheday.jpg" />
-				</div>
-			</div>
-			<div class='separator'>&amp;</div>
-			<div class="feature invert-order-mobile">
-				<div class="image">
-					<img src="images/trending.png" />
-				</div>
-				<div class="text">
-					<h4>Yesterday's most read</h4>
-					<p>We'll let you know what was trending yesterday</p>
-					<button class="button-primary js-push-button"
-						data-feature="yta" disabled>Enable Push Messages</button>
-				</div>
-			</div>
-			<div class="footer">
-				Pushipedia by Jon Robson 2015.<br>
-				<a href="https://github.com/jdlrobson/pushipedia">View on GitHub</a><br>
-				<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">
-					<img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" />
-				</a>
-			</div>
+			<%- include partials/header %>
+			<%- include partials/features %>
+			<%- include partials/footer %>
 		</div>
 		<script src="/scripts/main.js"></script>
 	</body>

@@ -29,6 +29,12 @@ curl --request POST --data feature=yta $PUSHIPEDIA_HOST/api/broadcast -u broadca
 
 You can use npm forever to keep Pushipedia up and running on a production server.
 
+## Configure
+
+```sh
+$ export PUSHIPEDIA_TRENDING_EDITS_PER_HOUR=5
+````
+
 ## Deploying to Heroku
 
 If deploying to heroku:
