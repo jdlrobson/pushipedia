@@ -79,7 +79,14 @@ app.post('/api/unsubscribe', function( req, resp ) {
 		resp.send( 'FAIL' );
 	}
 	resp.setHeader('Content-Type', 'text/plain' );
-	subscriber.unsubscribe( feature, req.body.id );
+	subscriber.unsubscribe( feature, req.body.id, function ( err ) {
+		if ( err ) {
+			resp.send( 'FAIL' );
+			resp.status( 503 );
+		} else {
+			resp.send( 'OK' );
+		}
+	} );
 } );
 
 app.post('/api/subscribe', function( req, resp ) {

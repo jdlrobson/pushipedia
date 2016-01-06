@@ -41,15 +41,8 @@ function subscribe( feature, id, errhandler ) {
 	db.put( feature + '!' + id, Date.now(), errhandler );
 }
 
-function unsubscribe( feature, id ) {
-	db.del( feature + '!' + id, function ( err ) {
-		if ( err ) {
-			resp.send( 'FAIL' );
-			resp.status( 503 );
-		} else {
-			resp.send( 'OK' );
-		}
-	} );
+function unsubscribe( feature, id, errhandler ) {
+	db.del( feature + '!' + id, errhandler );
 }
 
 module.exports = {
