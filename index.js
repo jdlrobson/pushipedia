@@ -144,9 +144,8 @@ app.get('/api/articles/yta', function ( req, resp ) {
 	pageviews.getTopPageviews({
 		project: 'en.wikipedia',
 		year: d.getFullYear(),
-		// Hack around https://github.com/tomayac/pageviews.js/issues/1
-		month: month < 10 ? '0' + month : month,
-		day: day < 10 ? '0' + day : day,
+		month: month,
+		day: day,
 		limit: 15
 	}).then(function(result) {
 		var topArticle;
