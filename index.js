@@ -7,6 +7,7 @@ var cards = require( './libs/cards' );
 var subscriber = require( './libs/subscriber' );
 var topPages = require( './libs/top-pages' );
 var featured = require( './libs/featured' );
+var trendingEdits = require( './libs/trending-edits' );
 
 // Auth
 var auth = function (req, res, next) {
@@ -35,6 +36,10 @@ app.set('view engine', 'ejs');
 
 app.get('/', function ( req, resp ) {
   resp.render( 'pages/index' );
+});
+
+app.get('/beta', function ( req, resp ) {
+  resp.render( 'pages/beta' );
 });
 
 app.get('/manifest.json', function ( req, resp ) {
@@ -142,8 +147,22 @@ app.get('/api/articles/yta', function ( req, resp ) {
 	});
 } );
 
+app.get('/api/articles/most-edited', function ( req, resp ) {
+	var trending = trendingEdits.getTrending();
+	if ( trending ) {
+		console.log(trending);
+		cards.respondWithJsonCard( resp, trending.title, 'enwiki', trending.data );
+	} else {
+		resp.status( 503 );
+		resp.send( 'Nothing trending right now.' )
+	}
+} );
+
+app.get('/api/articles/most-edited/candidates', function ( req, resp ) {
+	resp.status( 200 );
+	resp.send( JSON.stringify( trendingEdits.getCandidates() ) );
+} );
+
 app.listen( app.get('port'), function() {
   console.log('Node app is running on port', app.get('port'));
 } );
-
-
