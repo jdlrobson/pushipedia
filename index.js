@@ -45,9 +45,14 @@ app.get('/manifest.json', function ( req, resp ) {
 
 app.post( '/api/broadcast', auth, function ( req, resp ) {
 	console.log( 'broadcasting...' );
-	subscriber.broadcast( 'tfa' );
-	subscriber.broadcast( 'potd' );
-	subscriber.broadcast( 'yta' );
+	var feature = req.body.feature;
+	if ( feature ) {
+		subscriber.broadcast( feature );
+	} else {
+		subscriber.broadcast( 'tfa' );
+		subscriber.broadcast( 'potd' );
+		subscriber.broadcast( 'yta' );
+	}
 	resp.setHeader('Content-Type', 'text/plain' );
 	resp.status( 200 );
 	resp.send( 'OK' );
