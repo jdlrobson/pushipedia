@@ -6,6 +6,7 @@ var bodyParser = require('body-parser');
 var level = require('level')
 var db = level('./mydb')
 var pageviews = require('pageviews');
+var cards = require( './libs/cards' );
 
 // Auth
 var auth = function (req, res, next) {
@@ -157,7 +158,7 @@ app.get('/api/articles/potd', function ( req, resp ) {
 				if ( images.length ) {
 					console.log(images[0]);
 					console.log('boom');
-					respondWithJsonCard( resp, images[0].title );
+					cards.respondWithJsonCard( resp, images[0].title );
 				} else {
 					resp.status( 500 );
 				}
@@ -174,7 +175,7 @@ app.get('/api/articles/tfa', function ( req, resp ) {
 	var month = [ 'January', 'February', 'March', 'April', 'May', 'June',
 		'July', 'August', 'September', 'October', 'November', 'December' ][ d.getMonth() ];
 	var pageTitle = 'Wikipedia:Today\'s_featured_article/' + month + '_' + d.getDate() + ',_' + d.getFullYear();
-	respondWithJsonCard( resp, pageTitle );
+	cards.respondWithJsonCard( resp, pageTitle );
 } );
 
 app.get('/api/articles/yta', function ( req, resp ) {
@@ -206,33 +207,13 @@ app.get('/api/articles/yta', function ( req, resp ) {
 			}
 		} );
 
-		respondWithJsonCard( resp, topArticle.article );
+		cards.respondWithJsonCard( resp, topArticle.article );
 	}).catch(function(error) {
 		console.log(error);
 		resp.status( 500 );
 		resp.send( 'fail' )
 	});
 } );
-
-function respondWithJsonCard( resp, pageTitle ) {
-	var qs = 'action=query&prop=pageimages|extracts&piprop=thumbnail&format=json&formatversion=2&explaintext=&titles=' + encodeURIComponent( pageTitle );
-	fetch( 'https://en.wikipedia.org/w/api.php?' + qs ).then( function ( wikiResp ) {
-		if (wikiResp.status !== 200) {
-			resp.status( 503 );
-		}
-		wikiResp.json().then( function ( data ) {
-			var page,
-				pages = data.query.pages;
-			if ( pages.length ) {
-				page = pages[0];
-				resp.setHeader('Content-Type', 'application/json');
-				resp.send( page );
-			} else {
-				resp.status( 500 );
-			}
-		} );
-	} );
-}
 
 app.listen( app.get('port'), function() {
   console.log('Node app is running on port', app.get('port'));
