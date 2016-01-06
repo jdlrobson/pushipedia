@@ -149,7 +149,7 @@ app.get('/api/articles/yta', function ( req, resp ) {
 		limit: 15
 	}).then(function(result) {
 		var topArticle;
-		var blacklist = [ 'Main_Page', 'Web_scraping', 'Special:Export/', 'Special:Search', '-', 'Talk:', 'User:' ];
+		var blacklist = [ 'Main_Page', 'Web_scraping', 'Special:', '-', 'Talk:', 'User:' ];
 
 		// filter out
 		result.items[0].articles.forEach( function ( item ) {
