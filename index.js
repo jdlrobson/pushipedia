@@ -111,7 +111,7 @@ app.post('/api/subscribe', function( req, resp ) {
 
 app.get('/api/articles/potd', function ( req, resp ) {
 	featured.potd().then( function ( title ) {
-		cards.respondWithJsonCard( resp, title );
+		cards.respondWithJsonCard( resp, title, 'commons' );
 	} ).catch( function () {
 		resp.status( 500 );
 	} );

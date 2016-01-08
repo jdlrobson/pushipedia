@@ -8,8 +8,8 @@ self.addEventListener( 'push', function( event ) {
 		}
 		resp.json().then( function ( page ) {
 			self.registration.showNotification( "Photo of the day.", {
-				body: "The latest photo of the day is now available for your viewing pleasure. What delight awaits you?",
-				icon: icon,
+				body: "The latest photo of the day - " + page.title + " - is now available for your viewing pleasure. What delight awaits you?",
+				icon: page.thumbnail ? page.thumbnail.source : icon,
 				tag: tag,
 				data: 'https://commons.wikimedia.org/wiki/' + page.title
 		 } )

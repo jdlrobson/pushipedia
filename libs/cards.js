@@ -1,7 +1,13 @@
 var fetch = require('node-fetch');
-function respondWithJsonCard( resp, pageTitle ) {
+function respondWithJsonCard( resp, pageTitle, project ) {
+	var base = 'https://en.wikipedia.org';
 	var qs = 'action=query&prop=pageimages|extracts&piprop=thumbnail&format=json&formatversion=2&explaintext=&titles=' + encodeURIComponent( pageTitle );
-	fetch( 'https://en.wikipedia.org/w/api.php?' + qs ).then( function ( wikiResp ) {
+
+	if ( project === 'commons' ) {
+		base = 'https://commons.wikimedia.org';
+	}
+
+	fetch( base + '/w/api.php?' + qs ).then( function ( wikiResp ) {
 		if (wikiResp.status !== 200) {
 			resp.status( 503 );
 		}
