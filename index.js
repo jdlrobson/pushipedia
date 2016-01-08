@@ -3,9 +3,9 @@ var basicAuth = require('basic-auth');
 var app = express();
 var fetch = require('node-fetch');
 var bodyParser = require('body-parser');
-var pageviews = require('pageviews');
 var cards = require( './libs/cards' );
 var subscriber = require( './libs/subscriber' );
+var topPages = require( './libs/top-pages' );
 
 // Auth
 var auth = function (req, res, next) {
@@ -149,34 +149,8 @@ app.get('/api/articles/tfa', function ( req, resp ) {
 } );
 
 app.get('/api/articles/yta', function ( req, resp ) {
-	console.log( 'get yta' );
-	var d = new Date();
-	var month = d.getMonth() + 1;
-	var day = d.getDate() - 1;
-	pageviews.getTopPageviews({
-		project: 'en.wikipedia',
-		year: d.getFullYear(),
-		month: month,
-		day: day,
-		limit: 15
-	}).then(function(result) {
-		var topArticle;
-		var blacklist = [ 'Main_Page', 'Web_scraping', 'Special:', '-', 'Talk:', 'User:' ];
-
-		// filter out
-		result.items[0].articles.forEach( function ( item ) {
-			var clean = true;
-			blacklist.forEach( function ( term ) {
-				if ( item.article.indexOf( term ) > -1 ) {
-					clean = false;
-				}
-			} );
-			if ( !topArticle && clean ) {
-				topArticle = item;
-			}
-		} );
-
-		cards.respondWithJsonCard( resp, topArticle.article );
+	topPages.getFilteredTop().then( function ( title ) {
+		cards.respondWithJsonCard( resp, title );
 	}).catch(function(error) {
 		console.log(error);
 		resp.status( 500 );
