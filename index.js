@@ -6,6 +6,7 @@ var bodyParser = require('body-parser');
 var cards = require( './libs/cards' );
 var subscriber = require( './libs/subscriber' );
 var topPages = require( './libs/top-pages' );
+var featured = require( './libs/featured' );
 
 // Auth
 var auth = function (req, res, next) {
@@ -109,43 +110,19 @@ app.post('/api/subscribe', function( req, resp ) {
 });
 
 app.get('/api/articles/potd', function ( req, resp ) {
-	var d = new Date();
-	var month = d.getMonth() + 1;
-	var day = d.getDate();
-	day = day < 10 ? '0' + day : day;
-	month = month < 10 ? '0' + month : month;
-	var date = d.getFullYear() + '-' +  month + '-' + day;
-	var qs = 'action=query&prop=images&format=json&formatversion=2&titles=Template%3APotd%2F' + date;
-	fetch( 'https://commons.wikimedia.org/w/api.php?' + qs ).then( function ( wikiResp ) {
-		if (wikiResp.status !== 200) {
-			resp.status( 503 );
-		}
-		wikiResp.json().then( function ( data ) {
-			var page, images,
-				pages = data.query.pages;
-			if ( pages.length ) {
-				images = pages[0].images;
-				if ( images.length ) {
-					console.log(images[0]);
-					console.log('boom');
-					cards.respondWithJsonCard( resp, images[0].title );
-				} else {
-					resp.status( 500 );
-				}
-			} else {
-				resp.status( 500 );
-			}
-		} );
+	featured.potd().then( function ( title ) {
+		cards.respondWithJsonCard( resp, title );
+	} ).catch( function () {
+		resp.status( 500 );
 	} );
 } );
 
 app.get('/api/articles/tfa', function ( req, resp ) {
-	console.log( 'get tfa' );
-	var d = new Date();
-	var month = [ 'January', 'February', 'March', 'April', 'May', 'June',
-		'July', 'August', 'September', 'October', 'November', 'December' ][ d.getMonth() ];
-	var pageTitle = 'Wikipedia:Today\'s_featured_article/' + month + '_' + d.getDate() + ',_' + d.getFullYear();
-	cards.respondWithJsonCard( resp, pageTitle );
+	featured.tfa().then( function ( title ) {
+		cards.respondWithJsonCard( resp, title );
+	} ).catch( function () {
+		resp.status( 500 );
+	} );
 } );
 
 app.get('/api/articles/yta', function ( req, resp ) {
