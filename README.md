@@ -23,7 +23,7 @@ curl --request POST http://localhost:8142/api/broadcast -u broadcaster:$BROADCAS
 ```
 Alternatively you can trigger push notifications for an individual feature using:
 ```
-curl --request POST http://localhost:8142/api/broadcast -u broadcaster:$BROADCAST_SECRET
+curl --request POST --data feature=yta http://localhost:8142/api/broadcast -u broadcaster:$BROADCAST_SECRET
 ```
 
 You can use npm forever to keep Pushipedia up and running on a production server.
