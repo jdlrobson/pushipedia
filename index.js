@@ -118,11 +118,12 @@ app.get('/api/articles/potd', function ( req, resp ) {
 } );
 
 app.get('/api/articles/tfa', function ( req, resp ) {
-	featured.tfa().then( function ( title ) {
+	var title = featured.tfa();
+	if ( title ) {
 		cards.respondWithJsonCard( resp, title );
-	} ).catch( function () {
+	} else {
 		resp.status( 500 );
-	} );
+	}
 } );
 
 app.get('/api/articles/yta', function ( req, resp ) {
