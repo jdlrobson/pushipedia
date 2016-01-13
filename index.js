@@ -61,12 +61,14 @@ app.post( '/api/broadcast', auth, function ( req, resp ) {
 
 app.post( '/api/preview', function ( req, resp ) {
 	var id = req.body.id;
+	var provider = req.body.provider;
+
 	if ( !id ) {
 		resp.status( 400 );
 		resp.send( 'FAIL' );
 	} else {
 		resp.setHeader('Content-Type', 'text/plain' );
-		subscriber.ping( [ id ] );
+		subscriber.ping( provider, [ id ] );
 		resp.status( 200 );
 		resp.send( 'OK' );
 	}
@@ -75,12 +77,14 @@ app.post( '/api/preview', function ( req, resp ) {
 app.post('/api/unsubscribe', function( req, resp ) {
 	var feature = req.body.feature;
 	var id = req.body.id;
-	if ( !feature || !id ) {
+	var provider = req.body.provider;
+
+	if ( !feature || !id || !provider ) {
 		resp.status( 400 );
-		resp.send( 'FAIL' );
+		resp.send( 'FAIL: Please provide feature, id and provider' );
 	}
 	resp.setHeader('Content-Type', 'text/plain' );
-	subscriber.unsubscribe( feature, req.body.id, function ( err ) {
+	subscriber.unsubscribe( provider, feature, req.body.id, function ( err ) {
 		if ( err ) {
 			resp.send( 'FAIL' );
 			resp.status( 503 );
@@ -93,13 +97,15 @@ app.post('/api/unsubscribe', function( req, resp ) {
 app.post('/api/subscribe', function( req, resp ) {
 	var feature = req.body.feature;
 	var id = req.body.id;
-	if ( !feature || !id ) {
+	var provider = req.body.provider;
+
+	if ( !feature || !id || !provider ) {
 		resp.status( 400 );
-		resp.send( 'FAIL' );
+		resp.send( 'FAIL: Please provide feature, id and provider' );
 	}
 	resp.setHeader('Content-Type', 'text/plain' );
 
-	subscriber.subscribe( feature, id, function ( err ) {
+	subscriber.subscribe( provider, feature, id, function ( err ) {
 		if ( err ) {
 			resp.send( 'FAIL' );
 			resp.status( 503 );

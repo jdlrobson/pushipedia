@@ -1,10 +1,20 @@
 'use strict';
+function getPushProvider( endpoint ) {
+	if ( endpoint.indexOf( 'https://android.googleapis.com/gcm/send/' ) > -1 ) {
+		return 'google';
+	} else {
+		throw 'unknown provider';
+	}
+}
+
 function getSubscriptionId( endpoint ) {
 	return endpoint.split( 'https://android.googleapis.com/gcm/send/' )[1];
 }
 
 function sendSubscriptionToServer( subscription, action, feature ) {
 	var id = getSubscriptionId( subscription.endpoint );
+	var provider = getPushProvider( subscription.endpoint );
+
 	action = action || 'subscribe';
 	fetch( '/api/' + action, {
 		method: 'post',
@@ -14,6 +24,7 @@ function sendSubscriptionToServer( subscription, action, feature ) {
 		},
 		body: JSON.stringify( {
 			id: id,
+			provider: provider,
 			feature: feature
 		} )
 	} );
@@ -84,6 +95,7 @@ WikiWorker.prototype.showPreviewButton = function ( endpoint ) {
 					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify( {
+					provider: getPushProvider( endpoint ),
 					id: getSubscriptionId( endpoint )
 				} )
 			} ).then( function () {
