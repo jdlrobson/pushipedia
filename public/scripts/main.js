@@ -73,7 +73,7 @@ WikiWorker.prototype.showPreviewButton = function ( endpoint ) {
 	var previewButton = this.previewButton;
 	if ( !previewButton ) {
 		previewButton = document.createElement( 'button' );
-		previewButton.innerText = 'Preview';
+		previewButton.textContent = 'Preview';
 		pushButton.parentNode.insertBefore( previewButton, pushButton.nextSibling );
 		previewButton.addEventListener( 'click', function () {
 			this.disabled = true;
