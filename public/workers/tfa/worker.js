@@ -11,7 +11,7 @@ self.addEventListener( 'push', function( event ) {
 				body: page.extract,
 				icon: icon,
 				tag: tag,
-				data: 'https://en.wikipedia.org/wiki/' + page.title
+				data: 'https://en.wikipedia.org/wiki/' + page.title + '?referrer=pushipedia'
 		 } )
 		} );
 	} );
