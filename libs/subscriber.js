@@ -7,7 +7,7 @@ function isKnownProvider( provider ) {
 }
 
 function ping( provider, ids ) {
-	var endpoint,
+	var i, endpoint,
 		body = {},
 		headers = {
 			'Content-Type': 'application/json'
@@ -22,15 +22,30 @@ function ping( provider, ids ) {
 		body = JSON.stringify( {
 			"registration_ids": ids
 		} );
+		pingEndpoint( endpoint, headers, body );
+	} else if ( provider === 'firefox' ) {
+		for( i = 0; i < ids.length; i++ ) {
+			endpoint = 'https://updates.push.services.mozilla.com/push/' + ids[i];
+			pingEndpoint( endpoint );
+		}
 	} else {
 		throw 'Endpoint is unknown: ' + provider;
 	}
+}
 
-	fetch( endpoint, {
+function pingEndpoint( endpoint, headers, body ) {
+	var params = {
 		method: 'post',
 		headers: headers,
 		body: body
-	} ).then( function ( r ) {
+	};
+	if ( headers ) {
+		params.headers = headers;
+	}
+	if ( body ) {
+		params.body = body;
+	}
+	fetch( endpoint, params ).then( function ( r ) {
 		console.log( r.status, r.json() );
 	} );
 }
@@ -68,6 +83,7 @@ function broadcast( feature ) {
 	// for backwards compatibility
 	broadcastForEndpoint( feature, '' );
 	broadcastForEndpoint( feature, 'google' );
+	broadcastForEndpoint( feature, 'firefox' );
 }
 
 
