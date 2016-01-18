@@ -45,7 +45,7 @@ io.connect( 'stream.wikimedia.org/rc' )
 		socket.emit( 'subscribe', 'en.wikipedia.org' );
 	})
 	.on( 'change', function ( data ) {
-		var entity,
+		var entity, trendingCandidate, passed_mins,
 			title = data.title;
 
 		// Ignore non-main namespace and anything abuse filter, revert or tag related
@@ -73,23 +73,35 @@ io.connect( 'stream.wikimedia.org/rc' )
 		// when needed we send a notification
 		// Make sure enough unique users have contributed to the article to make sure it is notable
 		// and certain number of edit hit
+
+		passed_mins = ( new Date() - entity.ts ) / 1000 / 60;
+		trendingCandidate = {
+			title: title,
+			data: {
+				start: entity.ts,
+				speed: entity.edits / passed_mins,
+				anonAuthors: entity.anons.length,
+				uniqueAuthors: entity.contributors.length,
+				edits: entity.edits
+			}
+		};
+
 		if ( entity.contributors.length >= NUM_EDITORS && entity.edits > EDITS_PER_HOUR / 2 ) {
 
 			if ( !trendingEdit || trendingEdit.title !== title ) {
 				console.log('TREND!!!', title, data );
-				trendingEdit = {
-					title: title,
-					data: {
-						start: entity.ts,
-						anonAuthors: entity.anons.length,
-						uniqueAuthors: entity.contributors.length,
-						edits: entity.edits
-					}
-				};
+				trendingEdit = trendingCandidate;
+				trendingEdit.data.level = 3;
 
 				// TODO: broadcast with a date as otherwise a worker will get the wrong page if it views the site a month later :)
 				subscriber.broadcast( 'most-edited' );
 			}
+		} else if ( trendingEdit && trendingEdit.data.level < 3 && trendingEdit.data.edits < trendingCandidate.data.edits ) {
+			trendingEdit = trendingCandidate;
+			trendingEdit.data.level = 2;
+		} else if ( !trendingEdit ) {
+			trendingEdit = trendingCandidate;
+			trendingEdit.data.level = 1;
 		}
 
 	} );
