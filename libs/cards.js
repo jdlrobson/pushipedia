@@ -3,6 +3,22 @@ var NodeCache = require( "node-cache" );
 var myCache = new NodeCache( { stdTTL: 60 * 20, checkperiod: 60 * 5 } );
 
 /**
+ * Merge two objects
+ *
+ * @param {Object}
+ * @param {Object}
+ * @return {Object}
+ */
+function merge( page, additionalData ) {
+	var key;
+	for( key in additionalData ) {
+		if ( additionalData.hasOwnProperty( key ) ) {
+			page[key] = additionalData[key];
+		}
+	}
+	return page;
+}
+/**
  * Generates and sends a JSON for a title representing a card for display by push notification
  *
  * @param {Response} resp
@@ -24,22 +40,18 @@ function respondWithJsonCard( resp, pageTitle, project, additionalData ) {
 	myCache.get( fullUrl, function( err, page ) {
 		if ( err || page === undefined ) {
 			getCardFromServer( fullUrl ).then( function ( page ) {
-				// assign all values in data
-				for( key in additionalData ) {
-					if ( additionalData.hasOwnProperty( key ) ) {
-						page[key] = additionalData[key];
-					}
-				}
 				resp.setHeader('Content-Type', 'application/json');
-				resp.send( page );
+				resp.send( merge( page, additionalData ) );
 			}, function () {
 				resp.status( 503 );
 				resp.send( 'nope' );
 			} );
 		} else {
 			console.log( 'load from cache', page );
+			// assign all values in data
+
 			resp.setHeader('Content-Type', 'application/json');
-			resp.send( page );
+			resp.send( merge( page, additionalData ) );
 		}
 	} );
 }
