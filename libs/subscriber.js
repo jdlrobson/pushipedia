@@ -31,10 +31,13 @@ function ping( provider, ids ) {
 	if ( provider === 'google' ) {
 		endpoint = 'https://android.googleapis.com/gcm/send';
 		headers.Authorization = "key=" + process.env.GCM_API_KEY;
-		body = JSON.stringify( {
-			"registration_ids": ids
-		} );
-		pingEndpoint( endpoint, headers, body );
+		// send them 50 at a time
+		for( i = 0; i < ids.length; i = i + 50 ) {
+			body = JSON.stringify( {
+				"registration_ids": ids.slice(i, 50)
+			} );
+			pingEndpoint( endpoint, headers, body );
+		}
 	} else if ( provider === 'firefox' ) {
 		for( i = 0; i < ids.length; i++ ) {
 			endpoint = 'https://updates.push.services.mozilla.com/push/' + ids[i];
@@ -89,9 +92,7 @@ function broadcastForEndpoint( feature, provider ) {
 	db.createReadStream( {
 			gt: prefix + feature + '!',
 			 // stop at the last key with the prefix
-			lt: prefix + feature + '\xFF',
-			// TODO: Support more than 100 ids.
-			limit: 100
+			lt: prefix + feature + '\xFF'
 		} ).on( 'data', function ( data ) {
 			var id = data.key.split( '!' )[ index ];
 			if ( !id ) {
