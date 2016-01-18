@@ -1,5 +1,11 @@
 var pageviews = require('pageviews');
 
+/**
+ * Assesses pageview API for an article that best represents the most interesting
+ * article of the current day as read by users.
+ *
+ * @return {String} title of the best top article
+ */
 function getFilteredTop() {
 	var d = new Date();
 	var month = d.getMonth() + 1;

@@ -2,10 +2,22 @@ var level = require('level');
 var db = level('./mydb');
 var fetch = require('node-fetch');
 
+/**
+ * Checks whether we have support for the given provider
+ *
+ * @param {String} provider of push notifications (firefox or chrome)
+ * @returns {Boolean} whether we support it or not
+ */
 function isKnownProvider( provider ) {
 	return provider === 'google' || provider === 'firefox';
 }
 
+/**
+ * Obtains the picture of the current day.
+ *
+ * @param {String} provider of push notifications (firefox or chrome)
+ * @param {Array} of ids that need push notifications sent to them
+ */
 function ping( provider, ids ) {
 	var i, endpoint,
 		body = {},
@@ -33,6 +45,13 @@ function ping( provider, ids ) {
 	}
 }
 
+/**
+ * Pings an endpoint with headers and bodys
+ *
+ * @param {String} url to ping
+ * @param {Headers} headers for request
+ * @param {String} body of request
+ */
 function pingEndpoint( endpoint, headers, body ) {
 	var params = {
 		method: 'post',
@@ -50,6 +69,12 @@ function pingEndpoint( endpoint, headers, body ) {
 	} );
 }
 
+/**
+ * For a given feature sends push notifications to all subscribers
+ *
+ * @param {String} feature
+ * @param {String} provider
+ */
 function broadcastForEndpoint( feature, provider ) {
 	var prefix,
 		index = 3,
@@ -79,6 +104,11 @@ function broadcastForEndpoint( feature, provider ) {
 		} );
 }
 
+/**
+ * Broadcast to all subscribers that a current feature has had updates
+ *
+ * @param {String} feature
+ */
 function broadcast( feature ) {
 	// for backwards compatibility
 	broadcastForEndpoint( feature, '' );
@@ -86,7 +116,14 @@ function broadcast( feature ) {
 	broadcastForEndpoint( feature, 'firefox' );
 }
 
-
+/**
+ * Add a subscription
+ *
+ * @param {String} provider
+ * @param {String} feature
+ * @param {String} id
+ * @param {Function} errhandler what to do when things go wrong
+ */
 function subscribe( provider, feature, id, errhandler ) {
 	if ( !isKnownProvider( provider ) ) {
 		throw 'Unknown provider'  + provider;
@@ -94,6 +131,14 @@ function subscribe( provider, feature, id, errhandler ) {
 	db.put( provider + '!' + feature + '!' + id, Date.now(), errhandler );
 }
 
+/**
+ * Remove a subscription
+ *
+ * @param {String} provider
+ * @param {String} feature
+ * @param {String} id
+ * @param {Function} errhandler what to do when things go wrong
+ */
 function unsubscribe( provider, feature, id, errhandler ) {
 	if ( !isKnownProvider( provider ) ) {
 		throw 'Unknown provider'  + provider;

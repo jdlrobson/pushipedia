@@ -1,5 +1,10 @@
 var fetch = require('node-fetch');
 
+/**
+ * Obtains the picture of the current day.
+ *
+ * @return {Promise| being passed the title of the picture of the day
+ */
 function potd() {
 	return new Promise( function ( resolve, reject ) {
 		var d = new Date();
@@ -33,7 +38,12 @@ function potd() {
 	} );
 }
 
-// Lazy implementation - ideally should return title
+/**
+ * Obtains a title representing the summary of today's featured article
+ * Lazy implementation - ideally should return title of page itself.
+ *
+ * @return {String} title in project namespace of today's featured article
+ */
 function tfa() {
 	var d = new Date();
 	var month = [ 'January', 'February', 'March', 'April', 'May', 'June',
