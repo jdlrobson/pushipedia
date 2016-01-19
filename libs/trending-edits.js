@@ -14,6 +14,7 @@ var start = new Date();
  */
 function isRevertOrTag( comment ) {
 	return comment.indexOf( 'Tag:' ) > -1 ||
+		comment.indexOf( 'Undid' ) > -1 ||
 		comment.indexOf( 'vandalism' ) > -1 ||
 		comment.indexOf( 'Revert' ) > -1 ||
 		comment.indexOf( 'Reverting' ) > -1 ||

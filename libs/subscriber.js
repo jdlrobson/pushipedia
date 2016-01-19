@@ -103,6 +103,7 @@ function broadcastForEndpoint( feature, provider ) {
 		} ).on( 'end', function () {
 			ping( provider, ids );
 		} );
+		console.log( 'pinged ' + ids.length + ' subscribers' )
 }
 
 /**
