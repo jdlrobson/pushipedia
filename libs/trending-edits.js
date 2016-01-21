@@ -3,7 +3,7 @@ var io = require( 'socket.io-client' );
 var subscriber = require( './subscriber' );
 // David Bowie saw a surge of edits 6.38am-7.08am had 47 in 30m, 30 in 30m that followed
 var EDITS_PER_HOUR = process.env.PUSHIPEDIA_TRENDING_EDITS_PER_HOUR || 30;
-var NUM_EDITORS = process.env.PUSHIPEDIA_TRENDING_MINIMUM_EDITORS || 3;
+var NUM_EDITORS = process.env.PUSHIPEDIA_TRENDING_MINIMUM_EDITORS || 4;
 var socket = io.connect('stream.wikimedia.org/rc');
 var titles = {};
 var start = new Date();
@@ -87,7 +87,8 @@ io.connect( 'stream.wikimedia.org/rc' )
 			}
 		};
 
-		if ( entity.contributors.length >= NUM_EDITORS && entity.edits > EDITS_PER_HOUR / 2 ) {
+		var counted_editors = entity.anons.length ? 1 + entity.contributors.length : entity.contributors.length;
+		if ( counted_editors >= NUM_EDITORS && entity.edits > EDITS_PER_HOUR / 2 ) {
 
 			if ( !trendingEdit || trendingEdit.title !== title ) {
 				console.log('TREND!!!', title, data );
