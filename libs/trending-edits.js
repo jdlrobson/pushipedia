@@ -1,3 +1,4 @@
+var level = require('level');
 var trendingEdit = false;
 var io = require( 'socket.io-client' );
 var subscriber = require( './subscriber' );
@@ -7,6 +8,7 @@ var NUM_EDITORS = process.env.PUSHIPEDIA_TRENDING_MINIMUM_EDITORS || 4;
 var socket = io.connect('stream.wikimedia.org/rc');
 var titles = {};
 var start = new Date();
+var db = level('./db-trending');
 
 /**
  * @param {String} comment associated with edit
@@ -94,6 +96,7 @@ io.connect( 'stream.wikimedia.org/rc' )
 				console.log('TREND!!!', title, data );
 				trendingEdit = trendingCandidate;
 				trendingEdit.data.level = 3;
+				db.put( Date.now(), JSON.stringify( trendingEdit ) );
 
 				// TODO: broadcast with a date as otherwise a worker will get the wrong page if it views the site a month later :)
 				subscriber.broadcast( 'most-edited' );
@@ -142,6 +145,19 @@ function cleaner() {
 setInterval( cleaner, 1000 * 20 );
 
 module.exports = {
+	getHistory: function ( limit ) {
+		return new Promise( function ( resolve ) {
+			var result = []
+			db.createReadStream( {
+				limit: limit || 10,
+				reverse: true
+			} ).on( 'data', function ( data, s ) {
+				result.push( JSON.parse( data["value"] ) );
+			} ).on( 'end', function () {
+				resolve( result );
+			} );
+		} );
+	},
 	/**
 	 * @return {Array} of candidates for trending at any given time.
 	 */

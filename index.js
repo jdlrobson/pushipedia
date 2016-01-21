@@ -162,6 +162,13 @@ app.get('/api/articles/most-edited/candidates', function ( req, resp ) {
 	resp.send( JSON.stringify( trendingEdits.getCandidates() ) );
 } );
 
+app.get('/api/articles/most-edited/history', function ( req, resp ) {
+	resp.status( 200 );
+	trendingEdits.getHistory().then( function ( data ) {
+		resp.send( JSON.stringify( data ) );
+	} );
+} );
+
 app.listen( app.get('port'), function() {
   console.log('Node app is running on port', app.get('port'));
 } );
