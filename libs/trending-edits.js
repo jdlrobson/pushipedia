@@ -129,10 +129,6 @@ function cleaner() {
 
 			// delete anything that's not generating the right speed of edits
 			if ( edits_per_min < target_edits_per_min ) {
-				// clear the trending edit
-				if ( trendingEdit && trendingEdit.title === i ) {
-					trendingEdit = false;
-				}
 				delete titles[i];
 				purged++;
 			}
