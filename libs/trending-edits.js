@@ -14,12 +14,14 @@ var db = level('./db-trending');
  * @param {String} comment associated with edit
  * @return {Boolean} whether the comment indicates the edit is a revert or a tag.
  */
-function isRevertOrTag( comment ) {
+function isIgnoreWorthy( comment ) {
 	return comment.indexOf( 'Tag:' ) > -1 ||
 		comment.indexOf( 'Undid' ) > -1 ||
 		comment.indexOf( 'vandalism' ) > -1 ||
 		comment.indexOf( 'Revert' ) > -1 ||
 		comment.indexOf( 'Reverting' ) > -1 ||
+		comment.indexOf( 'article for deletion' ) > -1 ||
+		comment.indexOf( 'WP:' ) > -1 ||
 		comment.indexOf( 'Reverted' ) > -1;
 }
 
@@ -52,7 +54,7 @@ io.connect( 'stream.wikimedia.org/rc' )
 			title = data.title;
 
 		// Ignore non-main namespace and anything abuse filter, revert or tag related
-		if ( data.namespace !== 0 || data["log_type"] || isBotEdit( data ) || isRevertOrTag( data.comment ) ) {
+		if ( data.namespace !== 0 || data["log_type"] || isBotEdit( data ) || isIgnoreWorthy( data.comment ) ) {
 			return;
 		}
 		// Store everything else
