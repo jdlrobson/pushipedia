@@ -18,6 +18,32 @@ function merge( page, additionalData ) {
 	}
 	return page;
 }
+
+/**
+ * Generates and sends a JSON for a title representing a card for display by push notification
+ *
+ * @param {Array} pageTitles of article to generate cards for
+ * @param {String} [project] the title lives on (either commons or enwiki [default])
+ */
+function getJsonCards( pageTitles, project ) {
+	var key = pageTitles.join( '|' );
+	return new Promise( function ( resolve, reject ) {
+		myCache.get( key, function( err, pages ) {
+			if ( err || pages === undefined ) {
+				getCardsFromServer( pageTitles, project ).then( function ( pages ) {
+					myCache.set( key, pages );
+					resolve( pages );
+				}, function () {
+					reject();
+				} );
+			} else {
+				console.log( 'loaded from cache' );
+				resolve( pages );
+			}
+		} );
+	} );
+}
+
 /**
  * Generates and sends a JSON for a title representing a card for display by push notification
  *
@@ -27,32 +53,13 @@ function merge( page, additionalData ) {
  * @param {Object} [additionalData] additional data to serve up in the JSON response
  */
 function respondWithJsonCard( resp, pageTitle, project, additionalData ) {
-	var fullUrl,
-		base = 'https://en.wikipedia.org',
-		qs = 'action=query&prop=pageimages|extracts&piprop=thumbnail&format=json&formatversion=2&explaintext=&titles=' + encodeURIComponent( pageTitle );
-
-	if ( project === 'commons' ) {
-		base = 'https://commons.wikimedia.org';
-	}
 	additionalData = additionalData || {};
-
-	fullUrl = base + '/w/api.php?' + qs;
-	myCache.get( fullUrl, function( err, page ) {
-		if ( err || page === undefined ) {
-			getCardFromServer( fullUrl ).then( function ( page ) {
-				resp.setHeader('Content-Type', 'application/json');
-				resp.send( merge( page, additionalData ) );
-			}, function () {
-				resp.status( 503 );
-				resp.send( 'nope' );
-			} );
-		} else {
-			console.log( 'load from cache', page );
-			// assign all values in data
-
-			resp.setHeader('Content-Type', 'application/json');
-			resp.send( merge( page, additionalData ) );
-		}
+	getJsonCards( [ pageTitle ], project ).then( function ( cards ) {
+		resp.setHeader('Content-Type', 'application/json');
+		resp.send( merge( cards[0], additionalData ) );
+	}, function () {
+		resp.status( 503 );
+		resp.send( 'nope' );
 	} );
 }
 
@@ -60,10 +67,23 @@ function respondWithJsonCard( resp, pageTitle, project, additionalData ) {
  * Hits an external URL running MediaWiki and generates a JSON
  * Caches results.
  *
- * @param {String} fullUrl pointing to a JSON API response
- * @return {Promise}
+ * @param {Array} pageTitles of article to generate cards for
+ * @param {String} [project] the title lives on (either commons or enwiki [default])
  */
-function getCardFromServer( fullUrl ) {
+function getCardsFromServer( pageTitles, project ) {
+	var fullUrl, titles, encodedTitles = [],
+		base = 'https://en.wikipedia.org';
+
+	pageTitles.forEach( function ( title ) {
+		encodedTitles.push( encodeURIComponent( title ) );
+	} );
+	qs = 'action=query&pithumbsize=320&prop=pageimages|extracts&piprop=thumbnail&format=json&formatversion=2&exintro=1&explaintext=&exlimit='+ encodedTitles.length + '&pilimit=' + encodedTitles.length + '&titles=' + encodedTitles.join( '|' );
+	if ( project === 'commons' ) {
+		base = 'https://commons.wikimedia.org';
+	}
+
+	fullUrl = base + '/w/api.php?' + qs;
+
 	return new Promise( function ( resolve, reject ) {
 		fetch( fullUrl ).then( function ( wikiResp ) {
 			if (wikiResp.status !== 200) {
@@ -73,9 +93,11 @@ function getCardFromServer( fullUrl ) {
 				var page,
 					pages = data.query.pages;
 				if ( pages.length ) {
-					page = pages[0];
-					myCache.set( fullUrl, page );
-					resolve( page );
+					// API does it's own ordering so correct this.
+					pages = pages.sort( function ( a, b ) {
+						return pageTitles.indexOf( a.title ) > pageTitles.indexOf( b.title );
+					} );
+					resolve( pages );
 				} else {
 					reject();
 				}
@@ -85,5 +107,6 @@ function getCardFromServer( fullUrl ) {
 }
 
 module.exports = {
+	getJsonCards: getJsonCards,
 	respondWithJsonCard: respondWithJsonCard
 };
