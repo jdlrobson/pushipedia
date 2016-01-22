@@ -5,6 +5,8 @@ var subscriber = require( './subscriber' );
 // David Bowie saw a surge of edits 6.38am-7.08am had 47 in 30m, 30 in 30m that followed
 var EDITS_PER_HOUR = process.env.PUSHIPEDIA_TRENDING_EDITS_PER_HOUR || 30;
 var NUM_EDITORS = process.env.PUSHIPEDIA_TRENDING_MINIMUM_EDITORS || 4;
+// Maximum bias for trending topics
+var MAXIMUM_BIAS = process.env.PUSHIPEDIA_TRENDING_MAXIMUM_BIAS || 0.5;
 var socket = io.connect('stream.wikimedia.org/rc');
 var titles = {};
 var start = new Date();
@@ -77,7 +79,7 @@ io.connect( 'stream.wikimedia.org/rc' )
 		}
 		// Store everything else
 		if ( !titles[title] ) {
-			titles[title] = { edits: 1, ts: new Date(), contributors: [], anons: [] };
+			titles[title] = { edits: 1, ts: new Date(), contributors: [], anons: [], distribution: {} };
 		} else {
 			titles[title].edits++;
 		}
@@ -85,9 +87,18 @@ io.connect( 'stream.wikimedia.org/rc' )
 		if ( isIP( data.user ) ) {
 			if ( titles[title].anons.indexOf( data.user ) === -1 ) {
 				titles[title].anons.push( data.user );
+				titles[title].distribution[data.user] = 1;
+			} else {
+				titles[title].distribution[data.user]++;
 			}
-		} else if ( titles[title].contributors.indexOf( data.user ) === -1 ) {
-			titles[title].contributors.push( data.user );
+		} else {
+			var index = titles[title].contributors.indexOf( data.user );
+			if ( index === -1 ) {
+				titles[title].contributors.push( data.user );
+				titles[title].distribution[data.user] = 1;
+			} else {
+				titles[title].distribution[data.user]++;
+			}
 		}
 
 		// trending edit always refers to the most edited article
@@ -105,12 +116,26 @@ io.connect( 'stream.wikimedia.org/rc' )
 				speed: entity.edits / passed_mins,
 				anonAuthors: entity.anons.length,
 				uniqueAuthors: entity.contributors.length,
+				distribution: entity.distribution,
 				edits: entity.edits
 			}
 		};
+		var bias = 0;
+		var authors = 0;
+		for ( user in entity.distribution ) {
+			if ( entity.distribution.hasOwnProperty( user ) ) {
+				authors += 1;
+				bias += entity.distribution[user];
+			}
+		}
+		// completely biased is 1. 0 is unbiased (nothing is unbiased :-))
+		bias = ( bias / authors ) / entity.edits;
+		trendingCandidate.data.bias = bias;
 
 		var counted_editors = entity.anons.length ? 1 + entity.contributors.length : entity.contributors.length;
-		if ( counted_editors >= NUM_EDITORS && entity.edits > EDITS_PER_HOUR / 2 ) {
+		if ( bias > MAXIMUM_BIAS ) {
+			// ignore
+		} else if ( counted_editors >= NUM_EDITORS && entity.edits > EDITS_PER_HOUR / 2 ) {
 
 			if ( !trendingEdit || trendingEdit.title !== title ) {
 				console.log('TREND!!!', title, data );
@@ -134,9 +159,15 @@ io.connect( 'stream.wikimedia.org/rc' )
 					}
 				} );
 			}
-		} else if ( trendingEdit && trendingEdit.data.level < 3 && trendingEdit.data.edits < trendingCandidate.data.edits ) {
-			trendingEdit = trendingCandidate;
-			trendingEdit.data.level = 2;
+		} else if ( trendingEdit && trendingEdit.data.level < 3 ) {
+			if ( trendingEdit.data.edits === trendingCandidate.data.edits &&
+				trendingCandidate.data.bias < trendingEdit.data.bias ) {
+				trendingEdit = trendingCandidate;
+				trendingEdit.data.level = 2;
+			} else if ( trendingEdit.data.edits < trendingCandidate.data.edits ) {
+				trendingEdit = trendingCandidate;
+				trendingEdit.data.level = 2;
+			}
 		} else if ( !trendingEdit ) {
 			trendingEdit = trendingCandidate;
 			trendingEdit.data.level = 1;
