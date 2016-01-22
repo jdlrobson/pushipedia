@@ -11,6 +11,14 @@ var socket = io.connect('stream.wikimedia.org/rc');
 var titles = {};
 var start = new Date();
 var db = level('./db-trending');
+var moduleCache = level('./db-cache');
+
+// Restore the state of the app before it last crashed
+moduleCache.get( 'trend', function (err, value) {
+	if (!err ) {
+		titles = JSON.parse( value );
+	}
+} );
 
 /**
  * @param {Integer} limit of historical items to get
@@ -202,7 +210,9 @@ function cleaner() {
 			}
 		}
 	}
-	console.log( JSON.stringify( titles ) );
+	var json = JSON.stringify( titles );
+	console.log( json );
+	moduleCache.put( 'trend', json );
 	console.log( 'live=', live, 'purged=', purged );
 }
 // cleanup every 20s
