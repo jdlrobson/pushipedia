@@ -11,6 +11,24 @@ var start = new Date();
 var db = level('./db-trending');
 
 /**
+ * @param {Integer} limit of historical items to get
+ * @return {Promise}
+ */
+function getHistory( limit ) {
+	return new Promise( function ( resolve ) {
+		var result = []
+		db.createReadStream( {
+			limit: limit || 10,
+			reverse: true
+		} ).on( 'data', function ( data, s ) {
+			result.push( JSON.parse( data["value"] ) );
+		} ).on( 'end', function () {
+			resolve( result );
+		} );
+	} );
+}
+
+/**
  * @param {String} comment associated with edit
  * @return {Boolean} whether the comment indicates the edit is a revert or a tag.
  */
@@ -98,10 +116,23 @@ io.connect( 'stream.wikimedia.org/rc' )
 				console.log('TREND!!!', title, data );
 				trendingEdit = trendingCandidate;
 				trendingEdit.data.level = 3;
-				db.put( Date.now(), JSON.stringify( trendingEdit ) );
 
-				// TODO: broadcast with a date as otherwise a worker will get the wrong page if it views the site a month later :)
-				subscriber.broadcast( 'most-edited' );
+				// Check it's not a duplicate of a recent trend
+				// If two items are trending at the same time for a sustained period of time
+				// multiple pushes might get sent.
+				getHistory( 5 ).then( function ( data ) {
+					var pushNeeded = true;
+					data.forEach( function ( trending ) {
+						if ( trending.title === trendingEdit.title ) {
+							pushNeeded = false;
+						}
+					} );
+					if ( pushNeeded ) {
+						// TODO: broadcast with a date as otherwise a worker will get the wrong page if it views the site a month later :)
+						subscriber.broadcast( 'most-edited' );
+						db.put( Date.now(), JSON.stringify( trendingEdit ) );
+					}
+				} );
 			}
 		} else if ( trendingEdit && trendingEdit.data.level < 3 && trendingEdit.data.edits < trendingCandidate.data.edits ) {
 			trendingEdit = trendingCandidate;
@@ -147,19 +178,7 @@ function cleaner() {
 setInterval( cleaner, 1000 * 20 );
 
 module.exports = {
-	getHistory: function ( limit ) {
-		return new Promise( function ( resolve ) {
-			var result = []
-			db.createReadStream( {
-				limit: limit || 10,
-				reverse: true
-			} ).on( 'data', function ( data, s ) {
-				result.push( JSON.parse( data["value"] ) );
-			} ).on( 'end', function () {
-				resolve( result );
-			} );
-		} );
-	},
+	getHistory: getHistory,
 	/**
 	 * @return {Array} of candidates for trending at any given time.
 	 */
