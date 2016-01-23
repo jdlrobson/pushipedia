@@ -27,11 +27,11 @@ moduleCache.get( 'trend', function (err, value) {
 function getHistory( limit ) {
 	return new Promise( function ( resolve ) {
 		var result = []
-		db.createReadStream( {
-			limit: limit || 10,
+		db.createValueStream( {
+			limit: limit || 50,
 			reverse: true
-		} ).on( 'data', function ( data, s ) {
-			result.push( JSON.parse( data["value"] ) );
+		} ).on( 'data', function ( value ) {
+			result.push( JSON.parse( value ) );
 		} ).on( 'end', function () {
 			resolve( result );
 		} );
@@ -154,7 +154,7 @@ io.connect( 'stream.wikimedia.org/rc' )
 				// Check it's not a duplicate of a recent trend
 				// If two items are trending at the same time for a sustained period of time
 				// multiple pushes might get sent.
-				getHistory( 5 ).then( function ( data ) {
+				getHistory().then( function ( data ) {
 					var pushNeeded = true;
 					data.forEach( function ( trending ) {
 						if ( trending.title === trendingEdit.title ) {
