@@ -198,21 +198,29 @@ function cleaner() {
 		if ( titles.hasOwnProperty(i) ) {
 			live++;
 			title = titles[i];
-			passed = now - title.ts;
+			passed = now - new Date( title.ts );
 			// get time passed in minutes since original edit (its in milliseconds)
 			passed_mins = passed / 1000 / 60;
 			// work out edits per minute.
 			edits_per_min = title.edits / passed_mins;
 
 			// delete anything that's not generating the right speed of edits
-			if ( edits_per_min < target_edits_per_min ) {
+			if ( ( edits_per_min < target_edits_per_min )
+				// anything over 2 hours is way too old
+				|| ( passed_mins > 120 ) ) {
 				delete titles[i];
 				purged++;
+			} else {
+				// track the new speed / duration
+				titles[i].duration = passed_mins;
+				titles[i].speed = edits_per_min;
 			}
 		}
 	}
+
 	var json = JSON.stringify( titles );
 	console.log( json );
+	console.log( 'target speed', target_edits_per_min );
 	moduleCache.put( 'trend', json );
 	console.log( 'live=', live, 'purged=', purged );
 }
