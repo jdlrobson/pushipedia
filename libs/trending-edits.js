@@ -139,6 +139,7 @@ io.connect( 'stream.wikimedia.org/rc' )
 		// completely biased is 1. 0 is unbiased (nothing is unbiased :-))
 		bias = ( bias / authors ) / entity.edits;
 		trendingCandidate.data.bias = bias;
+		entity.bias = bias;
 
 		var counted_editors = entity.anons.length ? 1 + entity.contributors.length : entity.contributors.length;
 		if ( bias > MAXIMUM_BIAS ) {
