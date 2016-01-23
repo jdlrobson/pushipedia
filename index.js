@@ -169,6 +169,45 @@ app.get('/api/articles/most-edited/history', function ( req, resp ) {
 	} );
 } );
 
+function getTrendingCards() {
+	return new Promise( function ( resolve, reject ) {
+		trendingEdits.getHistory().then( function ( data ) {
+			var cardData = {};
+			var titles = data.map( function ( item ) {
+				cardData[ item.title ] = item.data;
+				return item.title;
+			} );;
+			cards.getJsonCards( titles ).then( function ( cards ) {
+				cards.forEach( function ( card ) {
+					card.data = cardData[card.title];
+				} )
+				resolve( cards );
+			}, function () {
+				reject();
+			} );
+		} );
+	} );
+}
+app.get('/api/list/most-edited', function ( req, resp ) {
+	getTrendingCards().then( function ( cards ) {
+		resp.status( 200 );
+		resp.send( JSON.stringify( cards ) );
+	}, function () {
+		resp.status( 503 );
+		resp.send( 'Sorry.' );
+	} );
+} );
+
+app.get('/trending', function ( req, resp ) {
+	getTrendingCards().then( function ( pagelist ) {
+		resp.render( 'pages/trending', {
+			pagelist: pagelist
+		} );
+	}, function () {
+		resp.status( 500 );
+		resp.send( 'fail' );
+	} );
+});
 app.listen( app.get('port'), function() {
   console.log('Node app is running on port', app.get('port'));
 } );

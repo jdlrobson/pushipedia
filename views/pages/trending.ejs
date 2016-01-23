@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+	<%- include partials/head %>
+	<body>
+		<div class="container">
+			<h1><a href="/beta">Pushipedia</a></h1>
+			<h4>Recently trending on Wikipedia...</h4>
+			<div class="cta">
+				<p>Enable push notifications right now to get these articles as they trend.</p>
+				<button class="button-primary js-push-button"
+					class="js-push-button" data-feature="tfa"
+						data-disable-preview="true" disabled>Enable Push Messages</button>
+				<script src="/scripts/main.js"></script>
+			</div>
+			<% for(var i=0; i<pagelist.length; i++) {%>
+					<div class='separator'><%= i + 1 %></div>
+					<div class="feature invert-order-mobile">
+						<div class="image">
+							<%if (pagelist[i].thumbnail) { %>
+							<img src="<%= pagelist[i].thumbnail.source %>" title="<%= pagelist[i].title %>" />
+							<% } else { %>
+							<img src="https://en.m.wikipedia.org/static/apple-touch/wikipedia.png"
+								title="no thumbnail available" />
+							<% } %>
+						</div>
+						<div class="text">
+							<h4><a href="https://en.m.wikipedia.org/wiki/<%= pagelist[i].title %>?referrer=pushipedia"><%= pagelist[i].title %></a></h4>
+							<em>Trended with <%= pagelist[i].data.edits %> edits on <%=new Date( pagelist[i].data.start ) %></p>
+							<p><%= pagelist[i].extract %></p>
+						</div>
+					</div>
+			<% } %>
+		</div>
+	</body>
+</html>

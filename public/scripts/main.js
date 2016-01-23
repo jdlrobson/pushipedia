@@ -129,7 +129,9 @@ WikiWorker.prototype.subscribe = function ( feature ) {
 				wikiWorker.isEnabled = true;
 				pushButton.textContent = 'Disable Push Messages';
 				pushButton.disabled = false;
-				wikiWorker.showPreviewButton( subscription );
+				if ( !pushButton.hasAttribute( 'data-disable-preview' ) ) {
+					wikiWorker.showPreviewButton( subscription );
+				}
 
 				// TODO: Send the subscription subscription.endpoint
 				// to your server and save it to send a push message
@@ -208,7 +210,10 @@ function WikiWorker( serviceWorkerRegistration, pushButton, feature ) {
 			// push messages
 			pushButton.textContent = 'Disable Push Messages';
 			wikiWorker.isEnabled = true;
-			wikiWorker.showPreviewButton( subscription );
+
+			if ( !pushButton.hasAttribute( 'data-disable-preview' ) ) {
+				wikiWorker.showPreviewButton( subscription );
+			}
 		} )
 		.catch( function ( err )  {
 			console.log( 'Error during getSubscription()', err );
