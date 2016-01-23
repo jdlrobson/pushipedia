@@ -7,8 +7,8 @@ self.addEventListener( 'push', function( event ) {
 			throw new Error();
 		}
 		resp.json().then( function ( page ) {
-			self.registration.showNotification( 'Trending on Wikipedia', {
-				body: page.extract,
+			self.registration.showNotification( 'Yesterday\'s most read on Wikipedia', {
+				body: 'The most read article on Wikipedia yesterday was ' + page.title + '\n\n' + page.extract,
 				icon: page.thumbnail ? page.thumbnail.source : icon,
 				tag: tag,
 				data: 'https://en.wikipedia.org/wiki/' + page.title + '?referrer=pushipedia'

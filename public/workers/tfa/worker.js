@@ -7,9 +7,9 @@ self.addEventListener( 'push', function( event ) {
 			throw new Error();
 		}
 		resp.json().then( function ( page ) {
-			self.registration.showNotification( page.title, {
+			self.registration.showNotification( 'Today\'s featured article', {
 				body: page.extract,
-				icon: icon,
+				icon: page.thumbnail ? page.thumbnail.source : icon,
 				tag: tag,
 				data: 'https://en.wikipedia.org/wiki/' + page.title + '?referrer=pushipedia'
 		 } )
