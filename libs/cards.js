@@ -95,7 +95,7 @@ function getCardsFromServer( pageTitles, project ) {
 				if ( pages.length ) {
 					// API does it's own ordering so correct this.
 					pages = pages.sort( function ( a, b ) {
-						return pageTitles.indexOf( a.title ) > pageTitles.indexOf( b.title );
+						return pageTitles.indexOf( a.title ) < pageTitles.indexOf( b.title ) ? -1 : 1;
 					} );
 					resolve( pages );
 				} else {
