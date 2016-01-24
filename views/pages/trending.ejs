@@ -25,7 +25,12 @@
 						</div>
 						<div class="text">
 							<h4><a href="https://en.m.wikipedia.org/wiki/<%= pagelist[i].title %>?referrer=pushipedia"><%= pagelist[i].title %></a></h4>
-							<em>Trended with <%= pagelist[i].data.edits %> edits on <%=new Date( pagelist[i].data.start ) %></p>
+							<em>Trended with <%= pagelist[i].data.edits %> edits
+							<% if ( pagelist[i].data.trendedAt ) { %>
+							in <%= Math.floor( ( new Date( pagelist[i].data.trendedAt ) - new Date( pagelist[i].data.start ) ) / 1000 / 60 ) %> minutes
+							on <%= new Date( pagelist[i].data.trendedAt ) %>
+							<% } %>
+							</em>
 							<p><%= pagelist[i].extract %></p>
 						</div>
 					</div>
