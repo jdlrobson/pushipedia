@@ -8,9 +8,9 @@ self.addEventListener( 'push', function( event ) {
 			return;
 		}
 		resp.json().then( function ( page ) {
-			var mins = Math.floor( ( new Date() - new Date( page.start ) ) / 1000 / 60 );
+			var mins = Math.floor( ( new Date( page.trendedAt ) - new Date( page.start ) ) / 1000 / 60 );
 			self.registration.showNotification( page.title + " is trending on Wikipedia", {
-				body: page.title + " is receiving an unusual amount of edits (" + page.edits + " in the last " + mins + " minutes).\n\n" + page.extract,
+				body: page.title + " is receiving an unusual amount of edits (" + page.edits + " in " + mins + " minutes).\n\n" + page.extract,
 				icon: page.thumbnail ? page.thumbnail.source : icon,
 				tag: tag,
 				data: 'https://en.wikipedia.org/wiki/' + page.title + '?referrer=pushipedia'

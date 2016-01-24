@@ -116,7 +116,8 @@ io.connect( 'stream.wikimedia.org/rc' )
 		// Make sure enough unique users have contributed to the article to make sure it is notable
 		// and certain number of edit hit
 
-		passed_mins = ( new Date() - entity.ts ) / 1000 / 60;
+		var now = new Date();
+		passed_mins = ( now - entity.ts ) / 1000 / 60;
 		trendingCandidate = {
 			title: title,
 			data: {
@@ -150,6 +151,7 @@ io.connect( 'stream.wikimedia.org/rc' )
 				console.log('TREND!!!', title, data );
 				trendingEdit = trendingCandidate;
 				trendingEdit.data.level = 3;
+				trendingEdit.data.trendedAt = now;
 
 				// Check it's not a duplicate of a recent trend
 				// If two items are trending at the same time for a sustained period of time
