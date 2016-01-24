@@ -39,13 +39,24 @@ function getHistory( limit ) {
 }
 
 /**
+ * @param {Object} edits history entity
+ * @param {Object} currentEdit current edit entity
+ * @return {Boolean} whether the comment indicates vandalism has occurred.
+ */
+function isVandalism( edits, currentEdit ) {
+	// If high level of reverts happening assume it is (note reverts not counted in edits)
+	return edits.reverts / edits.edits > 0.7 ||
+		// or if specifically called out
+		currentEdit.comment.toLowerCase().indexOf( 'vandalism' ) > -1;
+}
+
+/**
  * @param {String} comment associated with edit
  * @return {Boolean} whether the comment indicates the edit is a revert or a tag.
  */
-function isIgnoreWorthy( comment ) {
+function isRevert( comment ) {
 	return comment.indexOf( 'Tag:' ) > -1 ||
 		comment.indexOf( 'Undid' ) > -1 ||
-		comment.indexOf( 'vandalism' ) > -1 ||
 		comment.indexOf( 'Revert' ) > -1 ||
 		comment.indexOf( 'Reverting' ) > -1 ||
 		comment.indexOf( 'article for deletion' ) > -1 ||
@@ -81,18 +92,37 @@ io.connect( 'stream.wikimedia.org/rc' )
 		var entity, trendingCandidate, passed_mins,
 			title = data.title;
 
-		// Ignore non-main namespace and anything abuse filter, revert or tag related
-		if ( data.namespace !== 0 || data["log_type"] || isBotEdit( data ) || isIgnoreWorthy( data.comment ) ) {
+		// Ignore non-main namespace and anything abuse filter or tag related
+		if ( data.namespace !== 0 || data["log_type"] || isBotEdit( data ) ) {
 			return;
 		}
 		// Store everything else
 		if ( !titles[title] ) {
-			titles[title] = { edits: 1, ts: new Date(), contributors: [], anons: [], distribution: {} };
+			titles[title] = { edits: 1, anonEdits: 0,
+				isVandalism: false,
+				reverts: 0,
+				ts: new Date(), contributors: [], anons: [], distribution: {} };
 		} else {
+			if ( isRevert( data.comment ) ) {
+				// don't count edits but note the revert.
+				titles[title].reverts += 1;
+				return;
+			}
 			titles[title].edits++;
 		}
+
+		// trending edit always refers to the most edited article
+		entity = titles[title];
+
+		// When something has been called out as vandalism make sure to mark it
+		if ( isVandalism( entity, data ) ) {
+			entity.isVandalism = true;
+		}
+
 		// if the editor is a new user add them to the list
+		// @todo: use entity in this block
 		if ( isIP( data.user ) ) {
+			titles[title].anonEdits +=1;
 			if ( titles[title].anons.indexOf( data.user ) === -1 ) {
 				titles[title].anons.push( data.user );
 				titles[title].distribution[data.user] = 1;
@@ -109,9 +139,6 @@ io.connect( 'stream.wikimedia.org/rc' )
 			}
 		}
 
-		// trending edit always refers to the most edited article
-		entity = titles[title];
-
 		// when needed we send a notification
 		// Make sure enough unique users have contributed to the article to make sure it is notable
 		// and certain number of edit hit
@@ -126,6 +153,8 @@ io.connect( 'stream.wikimedia.org/rc' )
 				anonAuthors: entity.anons.length,
 				uniqueAuthors: entity.contributors.length,
 				distribution: entity.distribution,
+				anonEdits: entity.anonEdits,
+				reverts: entity.reverts,
 				edits: entity.edits
 			}
 		};
@@ -143,7 +172,7 @@ io.connect( 'stream.wikimedia.org/rc' )
 		entity.bias = bias;
 
 		var counted_editors = entity.anons.length ? 1 + entity.contributors.length : entity.contributors.length;
-		if ( bias > MAXIMUM_BIAS ) {
+		if ( bias > MAXIMUM_BIAS || entity.isVandalism ) {
 			// ignore
 		} else if ( counted_editors >= NUM_EDITORS && entity.edits > EDITS_PER_HOUR / 2 ) {
 
@@ -208,6 +237,8 @@ function cleaner() {
 
 			// delete anything that's not generating the right speed of edits
 			if ( ( edits_per_min < target_edits_per_min )
+				// if we known something had vandalism drop it
+				|| title.isVandalism
 				// anything over 2 hours is way too old
 				|| ( passed_mins > 120 ) ) {
 				delete titles[i];
