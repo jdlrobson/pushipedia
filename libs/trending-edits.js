@@ -260,7 +260,6 @@ function cleaner() {
 	}
 
 	var json = JSON.stringify( titles );
-	console.log( json );
 	console.log( 'target speed', target_edits_per_min );
 	moduleCache.put( 'trend', json );
 	console.log( 'live=', live, 'purged=', purged );
