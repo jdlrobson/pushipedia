@@ -65,6 +65,14 @@ function isRevert( comment ) {
 }
 
 /**
+ * @param {String} comment associated with edit
+ * @return {Boolean} whether the comment indicates the edit fixed a previous bad edit.
+ */
+function isFixup( comment ) {
+	return comment.indexOf( 'Fixed error' ) > -1;
+}
+
+/**
  * @param {Object} edit
  * @return {Boolean} whether the edit was performed by a bot.
  */
@@ -93,7 +101,7 @@ io.connect( 'stream.wikimedia.org/rc' )
 			title = data.title;
 
 		// Ignore non-main namespace and anything abuse filter or tag related
-		if ( data.namespace !== 0 || data["log_type"] || isBotEdit( data ) ) {
+		if ( data.namespace !== 0 || data["log_type"] || isBotEdit( data ) || isFixup( data.comment ) ) {
 			return;
 		}
 		// Store everything else
