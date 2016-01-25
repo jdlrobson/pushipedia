@@ -64,15 +64,20 @@ function respondWithJsonCard( resp, pageTitle, project, additionalData ) {
 }
 
 /**
- * Hits an external URL running MediaWiki and generates a JSON
+ * Hits an external URL running MediaWiki and generates a JSON containing extracts
+ * and page images
  * Caches results.
  *
- * @param {Array} pageTitles of article to generate cards for
+ * @param {Array} pageTitles of article to generate cards for (maximum 20)
  * @param {String} [project] the title lives on (either commons or enwiki [default])
  */
-function getCardsFromServer( pageTitles, project ) {
+function getCardsFromServerInternal( pageTitles, project ) {
 	var fullUrl, titles, encodedTitles = [],
 		base = 'https://en.wikipedia.org';
+
+	if ( pageTitles.length > 20 ) {
+		throw "too many titles requested";
+	}
 
 	pageTitles.forEach( function ( title ) {
 		encodedTitles.push( encodeURIComponent( title ) );
@@ -93,10 +98,6 @@ function getCardsFromServer( pageTitles, project ) {
 				var page,
 					pages = data.query.pages;
 				if ( pages.length ) {
-					// API does it's own ordering so correct this.
-					pages = pages.sort( function ( a, b ) {
-						return pageTitles.indexOf( a.title ) < pageTitles.indexOf( b.title ) ? -1 : 1;
-					} );
 					resolve( pages );
 				} else {
 					reject();
@@ -106,6 +107,36 @@ function getCardsFromServer( pageTitles, project ) {
 	} );
 }
 
+/**
+ * Sets of a queue of requests to obtain a list of cards for an unlimited amount of page titles
+ *
+ * @param {Array} pageTitles of article to generate cards for
+ * @param {String} [project] the title lives on (either commons or enwiki [default])
+ */
+function getCardsFromServer( pageTitles, project ) {
+	var stack = [];
+	for( var i = 0; i < pageTitles.length; i+= 20 ) {
+		stack.push( pageTitles.slice( i, i + 20 ) );
+	}
+	return new Promise( function ( resolve, reject ) {
+		var allCards = [];
+		function recursiveGet() {
+			getCardsFromServerInternal( stack.pop(), project ).then( function ( cards ) {
+				allCards = allCards.concat( cards );
+				if ( stack.length ) {
+					recursiveGet();
+				} else {
+					// API does it's own ordering so correct this.
+					allCards = allCards.sort( function ( a, b ) {
+						return pageTitles.indexOf( a.title ) < pageTitles.indexOf( b.title ) ? -1 : 1;
+					} );
+					resolve( allCards )
+				}
+			} );
+		}
+		recursiveGet();
+	} );
+}
 module.exports = {
 	getJsonCards: getJsonCards,
 	respondWithJsonCard: respondWithJsonCard
