@@ -109,7 +109,7 @@ io.connect( 'stream.wikimedia.org/rc' )
 			titles[title] = { edits: 1, anonEdits: 0,
 				isVandalism: false,
 				reverts: 0,
-				ts: new Date(), contributors: [], anons: [], distribution: {} };
+				start: new Date(), contributors: [], anons: [], distribution: {} };
 		} else {
 			if ( isRevert( data.comment ) ) {
 				// don't count edits but note the revert.
@@ -152,20 +152,19 @@ io.connect( 'stream.wikimedia.org/rc' )
 		// and certain number of edit hit
 
 		var now = new Date();
-		passed_mins = ( now - entity.ts ) / 1000 / 60;
+		passed_mins = ( now - entity.start ) / 1000 / 60;
+		entity.speed = entity.edits / passed_mins;
+		entity.anonAuthors = entity.anons.length;
+		entity.uniqueAuthors = entity.contributors.length;
+
 		trendingCandidate = {
 			title: title,
-			data: {
-				start: entity.ts,
-				speed: entity.edits / passed_mins,
-				anonAuthors: entity.anons.length,
-				uniqueAuthors: entity.contributors.length,
-				distribution: entity.distribution,
-				anonEdits: entity.anonEdits,
-				reverts: entity.reverts,
-				edits: entity.edits
-			}
+			data: {}
 		};
+		Object.keys( entity ).forEach( function ( i ) {
+			trendingCandidate.data[i] = entity[i];
+		} );
+
 		var bias = 0;
 		var authors = 0;
 		for ( user in entity.distribution ) {
@@ -237,7 +236,7 @@ function cleaner() {
 		if ( titles.hasOwnProperty(i) ) {
 			live++;
 			title = titles[i];
-			passed = now - new Date( title.ts );
+			passed = now - new Date( title.start );
 			// get time passed in minutes since original edit (its in milliseconds)
 			passed_mins = passed / 1000 / 60;
 			// work out edits per minute.
