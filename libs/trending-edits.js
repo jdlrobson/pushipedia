@@ -59,7 +59,6 @@ function isRevert( comment ) {
 		comment.indexOf( 'Undid' ) > -1 ||
 		comment.indexOf( 'Revert' ) > -1 ||
 		comment.indexOf( 'Reverting' ) > -1 ||
-		comment.indexOf( 'article for deletion' ) > -1 ||
 		comment.indexOf( 'WP:' ) > -1 ||
 		comment.indexOf( 'Reverted' ) > -1;
 }
@@ -80,6 +79,26 @@ function isBotEdit( edit ) {
 	// Some bots are not marked as a bot.
 	var knownBots = [ 'ClueBot NG' ];
 	return edit.bot || knownBots.indexOf( edit.user ) > - 1;
+}
+
+/**
+ * Does the edit suggest the article is new
+ *
+ * @param {Object} edit
+ * @return {Boolean}
+ */
+function isNew( edit ) {
+	return edit.comment.indexOf( 'Created page' ) > -1;
+}
+
+/**
+ * Does the edit suggest the article's future is volatile?
+ *
+ * @param {Object} edit
+ * @return {Boolean}
+ */
+function isVolatile( edit ) {
+	return edit.comment.indexOf( 'Proposing article for deletion' ) > -1;
 }
 
 /**
@@ -108,6 +127,8 @@ io.connect( 'stream.wikimedia.org/rc' )
 		if ( !titles[title] ) {
 			titles[title] = { edits: 1, anonEdits: 0,
 				isVandalism: false,
+				isNew: false,
+				isVolatile: false,
 				reverts: 0,
 				start: new Date(), contributors: [], anons: [], distribution: {} };
 		} else {
@@ -125,6 +146,16 @@ io.connect( 'stream.wikimedia.org/rc' )
 		// When something has been called out as vandalism make sure to mark it
 		if ( isVandalism( entity, data ) ) {
 			entity.isVandalism = true;
+		}
+
+		// When something has been called out as vandalism make sure to mark it
+		if ( isNew( data ) ) {
+			entity.isNew = true;
+		}
+
+		// When something has been called out as vandalism make sure to mark it
+		if ( isVolatile( data ) ) {
+			entity.isVolatile = true;
 		}
 
 		// if the editor is a new user add them to the list
@@ -181,7 +212,7 @@ io.connect( 'stream.wikimedia.org/rc' )
 		var counted_editors = entity.anons.length ? 1 + entity.contributors.length : entity.contributors.length;
 		if ( bias > MAXIMUM_BIAS || entity.isVandalism ) {
 			// ignore
-		} else if ( counted_editors >= NUM_EDITORS && entity.edits > EDITS_PER_HOUR / 2 ) {
+		} else if ( !entity.isVolatile && counted_editors >= NUM_EDITORS && entity.edits > EDITS_PER_HOUR / 2 ) {
 
 			if ( !trendingEdit || trendingEdit.title !== title ) {
 				console.log('TREND!!!', title, data );
