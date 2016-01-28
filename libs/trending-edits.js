@@ -39,15 +39,29 @@ function getHistory( limit ) {
 }
 
 /**
- * @param {Object} edits history entity
+ * Checks if the current edit tells us that vandalism has occurred.
+ *
  * @param {Object} currentEdit current edit entity
  * @return {Boolean} whether the comment indicates vandalism has occurred.
  */
-function isVandalism( edits, currentEdit ) {
+function isVandalism( edit ) {
+	return edit.comment.toLowerCase().indexOf( 'vandalism' ) > -1;
+}
+
+/**
+ * Heuristic to try and guess that vandalism is occurring.
+ *
+ * @param {Object} edits history entity
+ * @param {Object} currentEdit current edit entity
+ * @return {Boolean}
+ */
+function isPossibleVandalism( edits, currentEdit ) {
 	// If high level of reverts happening assume it is (note reverts not counted in edits)
 	return edits.reverts / edits.edits > 0.7 ||
-		// or if specifically called out
-		currentEdit.comment.toLowerCase().indexOf( 'vandalism' ) > -1;
+		// a little unfair but high amount of anon authors suggested it could be vandalism
+		edits.anonAuthors / 2 >= edits.uniqueAuthors ||
+		// look for cases where anon edits are higher and there has been at least 2 reverts
+		edits.reverts > 1 && edits.anonEdits > edits.edits - edit.anonEdits;
 }
 
 /**
@@ -144,7 +158,7 @@ io.connect( 'stream.wikimedia.org/rc' )
 		entity = titles[title];
 
 		// When something has been called out as vandalism make sure to mark it
-		if ( isVandalism( entity, data ) ) {
+		if ( isVandalism( data ) ) {
 			entity.isVandalism = true;
 		}
 
@@ -210,7 +224,7 @@ io.connect( 'stream.wikimedia.org/rc' )
 		entity.bias = bias;
 
 		var counted_editors = entity.anons.length ? 1 + entity.contributors.length : entity.contributors.length;
-		if ( bias > MAXIMUM_BIAS || entity.isVandalism ) {
+		if ( bias > MAXIMUM_BIAS || entity.isVandalism || isPossibleVandalism( entity ) ) {
 			// ignore
 		} else if ( !entity.isVolatile && counted_editors >= NUM_EDITORS && entity.edits > EDITS_PER_HOUR / 2 ) {
 
