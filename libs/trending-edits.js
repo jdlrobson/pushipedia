@@ -276,17 +276,20 @@ function cleaner() {
 			edits_per_min = title.edits / passed_mins;
 
 			// delete anything that's not generating the right speed of edits
-			if ( ( edits_per_min < target_edits_per_min )
-				// if we known something had vandalism drop it
-				|| title.isVandalism
-				// anything over 2 hours is way too old
-				|| ( passed_mins > 120 ) ) {
-				delete titles[i];
-				purged++;
-			} else {
-				// track the new speed / duration
-				titles[i].duration = passed_mins;
-				titles[i].speed = edits_per_min;
+			// track the new speed / duration
+			titles[i].duration = passed_mins;
+			titles[i].speed = edits_per_min;
+
+			if ( ( edits_per_min < target_edits_per_min ) ) {
+				if (
+					// anything over 1.5 hours is way too old
+					passed_mins > 90 ||
+					// and non-vandalised and non-volatile edits can be thrown away straight away
+					( !title.isVandalism && !title.isVolatile )
+				) {
+					purged++;
+					delete titles[i];
+				}
 			}
 		}
 	}
