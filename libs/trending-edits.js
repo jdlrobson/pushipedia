@@ -251,18 +251,6 @@ io.connect( 'stream.wikimedia.org/rc' )
 					}
 				} );
 			}
-		} else if ( trendingEdit && trendingEdit.data.level < 3 ) {
-			if ( trendingEdit.data.edits === trendingCandidate.data.edits &&
-				trendingCandidate.data.bias < trendingEdit.data.bias ) {
-				trendingEdit = trendingCandidate;
-				trendingEdit.data.level = 2;
-			} else if ( trendingEdit.data.edits < trendingCandidate.data.edits ) {
-				trendingEdit = trendingCandidate;
-				trendingEdit.data.level = 2;
-			}
-		} else if ( !trendingEdit ) {
-			trendingEdit = trendingCandidate;
-			trendingEdit.data.level = 1;
 		}
 
 	} );
