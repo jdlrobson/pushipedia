@@ -28,7 +28,7 @@ function getHistory( limit ) {
 	return new Promise( function ( resolve ) {
 		var result = []
 		db.createValueStream( {
-			limit: limit || 50,
+			limit: limit || 100,
 			reverse: true
 		} ).on( 'data', function ( value ) {
 			result.push( JSON.parse( value ) );
