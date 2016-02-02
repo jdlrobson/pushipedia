@@ -210,16 +210,16 @@ io.connect( 'stream.wikimedia.org/rc' )
 			trendingCandidate.data[i] = entity[i];
 		} );
 
-		var bias = 0;
-		var authors = 0;
+		var mostProfilicEditCount = 0;
 		for ( user in entity.distribution ) {
 			if ( entity.distribution.hasOwnProperty( user ) ) {
-				authors += 1;
-				bias += entity.distribution[user];
+				if ( entity.distribution[user] > mostProfilicEditCount ) {
+					mostProfilicEditCount = entity.distribution[user]
+				}
 			}
 		}
 		// completely biased is 1. 0 is unbiased (nothing is unbiased :-))
-		bias = ( bias / authors ) / entity.edits;
+		var bias = mostProfilicEditCount / entity.edits;
 		trendingCandidate.data.bias = bias;
 		entity.bias = bias;
 
