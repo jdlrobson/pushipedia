@@ -68,7 +68,9 @@ function pingEndpoint( endpoint, headers, body ) {
 		params.body = body;
 	}
 	fetch( endpoint, params ).then( function ( r ) {
-		console.log( r.status, r.json() );
+		console.log( r.status );
+	} ).then( function ( json ) {
+		console.log( json );
 	} );
 }
 
