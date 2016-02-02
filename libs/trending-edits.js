@@ -61,7 +61,7 @@ function isPossibleVandalism( edits, currentEdit ) {
 		// a little unfair but high amount of anon authors suggested it could be vandalism
 		edits.anonAuthors / 2 >= edits.uniqueAuthors ||
 		// look for cases where anon edits are higher and there has been at least 2 reverts
-		edits.reverts > 1 && edits.anonEdits > edits.edits - edit.anonEdits;
+		edits.reverts > 1 && edits.anonEdits > edits.edits - edits.anonEdits;
 }
 
 /**
