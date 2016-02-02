@@ -37,6 +37,24 @@ function sendSubscriptionToServer( subscription, action, feature ) {
 	} );
 }
 
+WikiWorker.prototype.ui = function ( subscription ) {
+	var btn = this.pushButton;
+	btn.disabled = false;
+	if ( subscription ) {
+		this.isEnabled = true;
+		btn.textContent = 'Disable Push Messages';
+		btn.setAttribute( 'class', 'js-push-button' );
+		if ( !btn.hasAttribute( 'data-disable-preview' ) ) {
+			this.showPreviewButton( subscription );
+		}
+	} else {
+		this.isEnabled = false;
+		btn.textContent = 'Enable Push Messages';
+		btn.setAttribute( 'class', 'button-primary js-push-button' );
+		this.disablePreview();
+	}
+};
+
 WikiWorker.prototype.unsubscribe = function ( feature ) {
 	var wikiWorker = this;
 	var pushButton = this.pushButton;
@@ -49,9 +67,7 @@ WikiWorker.prototype.unsubscribe = function ( feature ) {
 			function ( pushSubscription ) {
 				// Check we have a subscription to unsubscribe
 				if (!pushSubscription) {
-					wikiWorker.isEnabled = false;
-					pushButton.disabled = false;
-					pushButton.textContent = 'Enable Push Messages';
+					wikiWorker.ui();
 					return;
 				}
 
@@ -59,10 +75,7 @@ WikiWorker.prototype.unsubscribe = function ( feature ) {
 
 				// We have a subcription, so call unsubscribe on it
 				pushSubscription.unsubscribe().then( function ( successful ) {
-					pushButton.disabled = false;
-					pushButton.textContent = 'Enable Push Messages';
-					wikiWorker.isEnabled = false;
-					wikiWorker.disablePreview();
+					wikiWorker.ui();
 				} ).catch( function ( e ) {
 					// We failed to unsubscribe, this can lead to
 					// an unusual state, so may be best to remove
@@ -92,6 +105,7 @@ WikiWorker.prototype.showPreviewButton = function ( subscription ) {
 	if ( !previewButton ) {
 		previewButton = document.createElement( 'button' );
 		previewButton.textContent = 'Preview';
+		previewButton.setAttribute( 'class', 'button-primary' );
 		pushButton.parentNode.insertBefore( previewButton, pushButton.nextSibling );
 		previewButton.addEventListener( 'click', function () {
 			this.disabled = true;
@@ -126,12 +140,7 @@ WikiWorker.prototype.subscribe = function ( feature ) {
 			userVisibleOnly: true
 		} )
 			.then( function ( subscription ) {
-				wikiWorker.isEnabled = true;
-				pushButton.textContent = 'Disable Push Messages';
-				pushButton.disabled = false;
-				if ( !pushButton.hasAttribute( 'data-disable-preview' ) ) {
-					wikiWorker.showPreviewButton( subscription );
-				}
+				wikiWorker.ui( subscription );
 
 				// TODO: Send the subscription subscription.endpoint
 				// to your server and save it to send a push message
@@ -149,8 +158,7 @@ WikiWorker.prototype.subscribe = function ( feature ) {
 					// A problem occurred with the subscription, this can
 					// often be down to an issue or lack of the gcm_sender_id
 					// and / or gcm_user_visible_only
-					pushButton.disabled = false;
-					pushButton.textContent = 'Enable Push Messages';
+					wikiWorker.ui();
 				}
 			} );
 	} );
@@ -208,12 +216,7 @@ function WikiWorker( serviceWorkerRegistration, pushButton, feature ) {
 
 			// Set your UI to show they have subscribed for
 			// push messages
-			pushButton.textContent = 'Disable Push Messages';
-			wikiWorker.isEnabled = true;
-
-			if ( !pushButton.hasAttribute( 'data-disable-preview' ) ) {
-				wikiWorker.showPreviewButton( subscription );
-			}
+			wikiWorker.ui( subscription );
 		} )
 		.catch( function ( err )  {
 			console.log( 'Error during getSubscription()', err );
