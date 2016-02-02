@@ -13,12 +13,13 @@ function isKnownProvider( provider ) {
 }
 
 /**
- * Obtains the picture of the current day.
+ * Triggers push notifications to registered workers
  *
  * @param {String} provider of push notifications (firefox or chrome)
  * @param {Array} of ids that need push notifications sent to them
+ * @param [{String}] feature name for the worker being pushed to, when used stale subscriptions will be removed
  */
-function ping( provider, ids ) {
+function ping( provider, ids, feature ) {
 	var i, endpoint,
 		body = {},
 		headers = {
@@ -28,6 +29,15 @@ function ping( provider, ids ) {
 	// Assume google if not given
 	provider = provider || 'google';
 
+	function doUnsubscriptions ( data ) {
+		if ( feature && data.unsubscribe ) {
+			data.unsubscribe.forEach( function ( subscription ) {
+				console.log( 'unsubscribe', subscription, ' from ', feature, ' and provider', provider );
+				unsubscribe( provider, feature, subscription );
+			} )
+		}
+	};
+
 	if ( provider === 'google' ) {
 		endpoint = 'https://android.googleapis.com/gcm/send';
 		headers.Authorization = "key=" + process.env.GCM_API_KEY;
@@ -36,12 +46,12 @@ function ping( provider, ids ) {
 			body = JSON.stringify( {
 				"registration_ids": ids.slice(i, 50)
 			} );
-			pingEndpoint( endpoint, headers, body );
+			pingEndpoint( endpoint, headers, body, ids.slice(i, 50) ).then( doUnsubscriptions );
 		}
 	} else if ( provider === 'firefox' ) {
 		for( i = 0; i < ids.length; i++ ) {
 			endpoint = 'https://updates.push.services.mozilla.com/push/' + ids[i];
-			pingEndpoint( endpoint );
+			pingEndpoint( endpoint, null, null, ids ).then( doUnsubscriptions );
 		}
 	} else {
 		throw 'Endpoint is unknown: ' + provider;
@@ -54,9 +64,10 @@ function ping( provider, ids ) {
  * @param {String} url to ping
  * @param {Headers} headers for request
  * @param {String} body of request
+ * @param {String[]} ids of subscription in order used within the endpoint URL and/or headers
  */
-function pingEndpoint( endpoint, headers, body ) {
-	var params = {
+function pingEndpoint( endpoint, headers, body, ids ) {
+	var stale = [], params = {
 		method: 'post',
 		headers: headers,
 		body: body
@@ -67,10 +78,25 @@ function pingEndpoint( endpoint, headers, body ) {
 	if ( body ) {
 		params.body = body;
 	}
-	fetch( endpoint, params ).then( function ( r ) {
-		console.log( r.status );
+	return fetch( endpoint, params ).then( function ( r ) {
+		console.log( endpoint, r.status );
+		// If 404 assume was not a bad URL but bad single ID given to firefox
+		if ( r.status === 404 && ids.length === 1 ) {
+			stale.push( ids[0] );
+		}
+		return r.json();
 	} ).then( function ( json ) {
-		console.log( json );
+		if ( json && json.results ) {
+			// Deal with bad subscriptions to Chrome
+			json.results.forEach( function ( item, i ) {
+				if ( item.error ) {
+					stale.push( ids[i] );
+				}
+			} );
+		}
+		return {
+			unsubscribe: stale
+		};
 	} );
 }
 
@@ -103,7 +129,7 @@ function broadcastForEndpoint( feature, provider ) {
 			}
 			ids.push( id );
 		} ).on( 'end', function () {
-			ping( provider, ids );
+			ping( provider, ids, feature );
 			console.log( 'pinged ' + ids.length + ' subscribers' );
 		} );
 }
