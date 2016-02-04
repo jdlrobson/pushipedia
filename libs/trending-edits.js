@@ -60,6 +60,8 @@ function isPossibleVandalism( edits, currentEdit ) {
 	return edits.reverts / edits.edits > 0.7 ||
 		// a little unfair but high amount of anon authors suggested it could be vandalism
 		edits.anonAuthors / 2 >= edits.uniqueAuthors ||
+		// if there is a high number of reverts coupled with a high bias or slow edit speed than it might be vandalism
+		edits.reverts > 2 && ( edits.bias > 0.4 || edits.speed < 1 ) ||
 		// look for cases where anon edits are higher and there has been at least 2 reverts
 		edits.reverts > 1 && edits.anonEdits > edits.edits - edits.anonEdits;
 }
