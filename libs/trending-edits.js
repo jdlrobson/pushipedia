@@ -49,6 +49,20 @@ function isVandalism( edit ) {
 }
 
 /**
+ * Checks if the current edit hints that it might be notable
+ *
+ * @param {Object} currentEdit current edit entity
+ * @return {Boolean} whether the comment indicates something noteworthy occurred.
+ */
+function isPossiblyNotable( edit ) {
+	var comment = edit.comment.toLowerCase();
+	return comment.indexOf( 'eventtag' ) > -1 ||
+		comment.indexOf( 'current event' ) > -1 ||
+		comment.indexOf( '→‎Death' ) > -1 ||
+		comment.indexOf( 'ongoing event' ) > -1;
+}
+
+/**
  * Heuristic to try and guess that vandalism is occurring.
  *
  * @param {Object} edits history entity
@@ -163,6 +177,9 @@ io.connect( 'stream.wikimedia.org/rc' )
 		if ( isVandalism( data ) ) {
 			entity.isVandalism = true;
 		}
+		if ( isPossiblyNotable( data ) ) {
+			entity.isPossiblyNotable = true;
+		}
 
 		// When something has been called out as vandalism make sure to mark it
 		if ( isNew( data ) ) {
@@ -226,7 +243,9 @@ io.connect( 'stream.wikimedia.org/rc' )
 		entity.bias = bias;
 
 		var counted_editors = entity.anons.length ? 1 + entity.contributors.length : entity.contributors.length;
-		if ( bias > MAXIMUM_BIAS || entity.isVandalism || isPossibleVandalism( entity ) ) {
+		if ( bias > MAXIMUM_BIAS ||
+			( entity.isVandalism && !entity.isPossiblyNotable ) ||
+			( isPossibleVandalism( entity ) && !entity.isPossiblyNotable ) ) {
 			// ignore
 		} else if ( !entity.isVolatile && counted_editors >= NUM_EDITORS && entity.edits > EDITS_PER_HOUR / 2 ) {
 
