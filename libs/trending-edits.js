@@ -1,5 +1,4 @@
 var level = require('level');
-var trendingEdit = false;
 var io = require( 'socket.io-client' );
 var subscriber = require( './subscriber' );
 // David Bowie saw a surge of edits 6.38am-7.08am had 47 in 30m, 30 in 30m that followed
@@ -10,8 +9,9 @@ var MAXIMUM_BIAS = process.env.PUSHIPEDIA_TRENDING_MAXIMUM_BIAS || 0.5;
 var socket = io.connect('stream.wikimedia.org/rc');
 var titles = {};
 var start = new Date();
-var db = level('./db-trending');
 var moduleCache = level('./db-cache');
+
+var registeredSubscribers = [];
 
 // Restore the state of the app before it last crashed
 moduleCache.get( 'trend', function (err, value) {
@@ -20,23 +20,132 @@ moduleCache.get( 'trend', function (err, value) {
 	}
 } );
 
-/**
- * @param {Integer} limit of historical items to get
- * @return {Promise}
- */
-function getHistory( limit ) {
-	return new Promise( function ( resolve ) {
-		var result = []
-		db.createValueStream( {
-			limit: limit || 100,
-			reverse: true
-		} ).on( 'data', function ( value ) {
-			result.push( JSON.parse( value ) );
-		} ).on( 'end', function () {
-			resolve( result );
-		} );
-	} );
+function Trender( name, worker, options ) {
+	this.trendingEdit = false;
+	options = options || {};
+	name = name ? '-' + name : '';
+	this.db = level('./db-trending' + name );
+	this.worker = worker;
+	this.maxBias = options.maxBias || MAXIMUM_BIAS;
+	this.minEditsPerHour = options.minEditsPerHour || EDITS_PER_HOUR;
+	this.minEditors = options.minEditors || NUM_EDITORS;
+	this.allowVandalism = options.allowVandalism;
+	this.fn = options.fn;
+	registeredSubscribers.push( this );
 }
+
+Trender.prototype = {
+	/**
+	* @param {Integer} limit of historical items to get
+	* @return {Promise}
+	*/
+	getHistory: function ( limit ) {
+		var db = this.db;
+
+		return new Promise( function ( resolve ) {
+			var result = []
+			db.createValueStream( {
+				limit: limit || 100,
+				reverse: true
+			} ).on( 'data', function ( value ) {
+				result.push( JSON.parse( value ) );
+			} ).on( 'end', function () {
+				resolve( result );
+			} );
+		} );
+	},
+	/**
+	 * @return {Array} of candidates for trending at any given time.
+	 */
+	getCandidates: function () {
+		var candidates = [];
+		var page;
+		for( title in titles ) {
+			if ( titles.hasOwnProperty( title ) ) {
+				page = titles[ title ];
+				if ( page.edits > 2 && page.contributors.length > 1 ) {
+					page.title = title;
+					candidates.push( page );
+				}
+			}
+		}
+		return candidates;
+	},
+	/**
+	 * @return {Object} representing the current trending edit
+	 */
+	getTrending: function () {
+		return this.trendingEdit;
+	},
+	isTrending: function ( trendingEdit ) {
+		if ( this.fn ) {
+			return this.fn.apply( this, trendingEdit );
+		}
+
+		var entity = trendingEdit.data;
+		var namedEditorsCount = entity.contributors.length;
+		var anonEditorsCount = entity.anons.length
+		var counted_editors;
+
+		if ( this.includeAnonEdits ) {
+			counted_editors = anonEditorsCount + namedEditorsCount;
+		} else {
+			counted_editors = anonEditorsCount ? 1 + namedEditorsCount : namedEditorsCount;
+		}
+		var blocked = this.allowVandalism ? false : entity.isVolatile;
+		var treshold = this.minEditsPerHour / 2;
+
+		if ( !this.allowVandalism ) {
+			if ( !entity.isPossiblyNotable &&
+				( entity.isVandalism || isPossibleVandalism( entity ) )
+			) {
+					blocked = true;
+			}
+		}
+
+		if ( entity.bias > this.maxBias ) {
+			blocked = true;
+		}
+
+		if ( !blocked && counted_editors >= this.minEditors && entity.edits > treshold ) {
+			return true;
+		}
+	},
+	handleTrendEntity: function ( trendingCandidate ) {
+		var worker = this.worker;
+		var db = this.db;
+		var now = new Date();
+		var trendingEdit = this.trendingEdit;
+
+		if ( this.isTrending( trendingCandidate ) ) {
+
+			if ( !trendingEdit || trendingEdit.title !== trendingCandidate.title ) {
+				console.log('TREND!!!', trendingCandidate.title, trendingCandidate.data );
+				trendingCandidate.data.level = 3;
+				trendingCandidate.data.trendedAt = now;
+				this.trendingEdit = trendingCandidate;
+				trendingEdit = trendingCandidate;
+
+				// Check it's not a duplicate of a recent trend
+				// If two items are trending at the same time for a sustained period of time
+				// multiple pushes might get sent.
+				this.getHistory().then( function ( data ) {
+					var pushNeeded = true;
+					data.forEach( function ( trending ) {
+						if ( trending.title === trendingEdit.title ) {
+							pushNeeded = false;
+						}
+					} );
+					if ( pushNeeded ) {
+						// TODO: broadcast with a date as otherwise a worker will get the wrong page if it views the site a month later :)
+						subscriber.broadcast( worker );
+						db.put( Date.now(), JSON.stringify( trendingEdit ) );
+					}
+				} );
+			}
+		}
+	}
+};
 
 /**
  * Checks if the current edit tells us that vandalism has occurred.
@@ -238,42 +347,11 @@ io.connect( 'stream.wikimedia.org/rc' )
 			}
 		}
 		// completely biased is 1. 0 is unbiased (nothing is unbiased :-))
-		var bias = mostProfilicEditCount / entity.edits;
-		trendingCandidate.data.bias = bias;
-		entity.bias = bias;
+		trendingCandidate.data.bias = mostProfilicEditCount / entity.edits;
 
-		var counted_editors = entity.anons.length ? 1 + entity.contributors.length : entity.contributors.length;
-		if ( bias > MAXIMUM_BIAS ||
-			( entity.isVandalism && !entity.isPossiblyNotable ) ||
-			( isPossibleVandalism( entity ) && !entity.isPossiblyNotable ) ) {
-			// ignore
-		} else if ( !entity.isVolatile && counted_editors >= NUM_EDITORS && entity.edits > EDITS_PER_HOUR / 2 ) {
-
-			if ( !trendingEdit || trendingEdit.title !== title ) {
-				console.log('TREND!!!', title, data );
-				trendingEdit = trendingCandidate;
-				trendingEdit.data.level = 3;
-				trendingEdit.data.trendedAt = now;
-
-				// Check it's not a duplicate of a recent trend
-				// If two items are trending at the same time for a sustained period of time
-				// multiple pushes might get sent.
-				getHistory().then( function ( data ) {
-					var pushNeeded = true;
-					data.forEach( function ( trending ) {
-						if ( trending.title === trendingEdit.title ) {
-							pushNeeded = false;
-						}
-					} );
-					if ( pushNeeded ) {
-						// TODO: broadcast with a date as otherwise a worker will get the wrong page if it views the site a month later :)
-						subscriber.broadcast( 'most-edited' );
-						db.put( Date.now(), JSON.stringify( trendingEdit ) );
-					}
-				} );
-			}
-		}
-
+		registeredSubscribers.forEach( function ( sub ) {
+			sub.handleTrendEntity( trendingCandidate );
+		} );
 	} );
 
 /**
@@ -323,29 +401,4 @@ function cleaner() {
 // cleanup every 20s
 setInterval( cleaner, 1000 * 20 );
 
-module.exports = {
-	getHistory: getHistory,
-	/**
-	 * @return {Array} of candidates for trending at any given time.
-	 */
-	getCandidates: function () {
-		var candidates = [];
-		var page;
-		for( title in titles ) {
-			if ( titles.hasOwnProperty( title ) ) {
-				page = titles[ title ];
-				if ( page.edits > 2 && page.contributors.length > 1 ) {
-					page.title = title;
-					candidates.push( page );
-				}
-			}
-		}
-		return candidates;
-	},
-	/**
-	 * @return {Object} representing the current trending edit
-	 */
-	getTrending: function () {
-		return trendingEdit;
-	}
-};
+module.exports = Trender;

@@ -7,8 +7,10 @@ var cards = require( './libs/cards' );
 var subscriber = require( './libs/subscriber' );
 var topPages = require( './libs/top-pages' );
 var featured = require( './libs/featured' );
-var trendingEdits = require( './libs/trending-edits' );
 var httpsOnly = process.env.PUSHIPEDIA_HTTPS;
+var Trender = require( './libs/trending-edits' );
+// Setup a trender for most-edited worker
+var trendingEdits = new Trender( null, 'most-edited' );
 
 // Auth
 var auth = function (req, res, next) {
@@ -223,6 +225,7 @@ app.get('/trending', function ( req, resp ) {
 		resp.send( 'fail' );
 	} );
 });
+
 app.listen( app.get('port'), function() {
   console.log('Node app is running on port', app.get('port'));
 } );
