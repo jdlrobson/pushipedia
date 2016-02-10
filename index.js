@@ -11,6 +11,13 @@ var httpsOnly = process.env.PUSHIPEDIA_HTTPS;
 var Trender = require( './libs/trending-edits' );
 // Setup a trender for most-edited worker
 var trendingEdits = new Trender( null, 'most-edited' );
+var vandaliser = new Trender( 'vandals', 'most-vandalised', {
+	maxBias: 1,
+	minEditsPerHour: 3,
+	includeAnonEdits: true,
+	minEditors: 1,
+	allowVandalism: true
+} );
 
 // Auth
 var auth = function (req, res, next) {
@@ -162,6 +169,21 @@ app.get('/api/articles/yta', function ( req, resp ) {
 		resp.status( 500 );
 		resp.send( 'fail' )
 	});
+} );
+
+app.get('/api/articles/most-vandalised', function ( req, resp ) {
+	var trending = vandaliser.getTrending();
+	if ( trending ) {
+		cards.respondWithJsonCard( resp, trending.title, 'enwiki', trending.data );
+	} else {
+		resp.status( 503 );
+		resp.send( 'Nothing being vandalised right now.' )
+	}
+} );
+
+app.get('/api/articles/most-vandalised/candidates', function ( req, resp ) {
+	resp.status( 200 );
+	resp.send( JSON.stringify( vandaliser.getCandidates() ) );
 } );
 
 app.get('/api/articles/most-edited', function ( req, resp ) {

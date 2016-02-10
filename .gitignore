@@ -4,3 +4,4 @@ Dockerfile
 docker-compose.yml
 mydb
 db-trending
+db-trending-vandals

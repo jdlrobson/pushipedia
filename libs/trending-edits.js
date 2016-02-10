@@ -31,6 +31,7 @@ function Trender( name, worker, options ) {
 	this.minEditors = options.minEditors || NUM_EDITORS;
 	this.allowVandalism = options.allowVandalism;
 	this.fn = options.fn;
+	console.log( name, worker, JSON.stringify( options ) );
 	registeredSubscribers.push( this );
 }
 
@@ -138,6 +139,7 @@ Trender.prototype = {
 					} );
 					if ( pushNeeded ) {
 						// TODO: broadcast with a date as otherwise a worker will get the wrong page if it views the site a month later :)
+						console.log( 'push to ', worker );
 						subscriber.broadcast( worker );
 						db.put( Date.now(), JSON.stringify( trendingEdit ) );
 					}
