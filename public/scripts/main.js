@@ -37,19 +37,19 @@ function sendSubscriptionToServer( subscription, action, feature ) {
 	} );
 }
 
-WikiWorker.prototype.ui = function ( subscription ) {
+WikiWorker.prototype.ui = function ( subscription, msg ) {
 	var btn = this.pushButton;
 	btn.disabled = false;
 	if ( subscription ) {
 		this.isEnabled = true;
-		btn.textContent = 'Disable Push Messages';
+		btn.textContent = msg || 'Disable Push Messages';
 		btn.setAttribute( 'class', 'js-push-button' );
 		if ( !btn.hasAttribute( 'data-disable-preview' ) ) {
 			this.showPreviewButton( subscription );
 		}
 	} else {
 		this.isEnabled = false;
-		btn.textContent = 'Enable Push Messages';
+		btn.textContent = msg || 'Enable Push Messages';
 		btn.setAttribute( 'class', 'button-primary js-push-button' );
 		this.disablePreview();
 	}
@@ -195,6 +195,7 @@ function WikiWorker( serviceWorkerRegistration, pushButton, feature ) {
 	// If its denied, it's a permanent block until the
 	// user changes the permission
 	if ( Notification.permission === 'denied' ) {
+		this.ui( null, 'Please unblock push notifications for this site.' );
 		return;
 	}
 
