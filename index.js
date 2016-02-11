@@ -8,6 +8,7 @@ var subscriber = require( './libs/subscriber' );
 var topPages = require( './libs/top-pages' );
 var featured = require( './libs/featured' );
 var trendingEdits = require( './libs/trending-edits' );
+var httpsOnly = process.env.PUSHIPEDIA_HTTPS;
 
 // Auth
 var auth = function (req, res, next) {
@@ -24,6 +25,20 @@ var auth = function (req, res, next) {
 };
 
 app.use(bodyParser.json()); // support json encoded bodies
+
+app.enable('trust proxy');
+app.use(function (req, res, next) {
+	if (httpsOnly) {
+		if ( req.secure ) {
+			next();
+		} else {
+			res.redirect('https://' + req.headers.host + req.url);
+		}
+	} else {
+		next();
+	}
+});
+
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
 app.set('port', (process.env.PORT || 5000));

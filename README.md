@@ -11,6 +11,7 @@ $ export GCM_API_KEY=<your key>
 $ export GCM_SENDER_ID=<your id>
 $ export BROADCAST_SECRET=<your secret code>
 $ export PUSHIPEDIA_HOST=<e.g. http://localhost:8142/>
+$ export PUSHIPEDIA_HTTPS=true
 $ cd pushipedia
 $ npm install
 $ npm start
