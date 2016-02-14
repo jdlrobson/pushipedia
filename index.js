@@ -28,12 +28,8 @@ app.use(bodyParser.json()); // support json encoded bodies
 
 app.enable('trust proxy');
 app.use(function (req, res, next) {
-	if (httpsOnly) {
-		if ( req.secure ) {
-			next();
-		} else {
-			res.redirect('https://' + req.headers.host + req.url);
-		}
+	if (httpsOnly && !req.secure) {
+		res.redirect('https://' + req.headers.host + req.url);
 	} else {
 		next();
 	}
