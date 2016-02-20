@@ -11,6 +11,7 @@ var httpsOnly = process.env.PUSHIPEDIA_HTTPS;
 var Trender = require( './libs/trending-edits' );
 // Setup a trender for most-edited worker
 var trendingEdits = new Trender( null, 'most-edited' );
+var random = new Trender( 'hourly-hot' );
 
 // Auth
 var auth = function (req, res, next) {
@@ -162,6 +163,28 @@ app.get('/api/articles/yta', function ( req, resp ) {
 		resp.status( 500 );
 		resp.send( 'fail' )
 	});
+} );
+
+app.get('/api/articles/hourly-hot', function ( req, resp ) {
+	var candidates = random.getCandidates();
+	candidates = candidates.sort( function ( a, b ) {
+		return a.edits > b.edits ? -1 : 1;
+	} );
+	var choice = candidates[0];
+
+	if ( choice ) {
+		cards.getJsonCards( [ choice.title ] ).then( function ( cards ) {
+			var card = cards[0];
+			if ( card.missing ) {
+				resp.send( 'Page was deleted. Not interesting any more.' );
+			} else {
+				resp.send( JSON.stringify( cards[0] ) );
+			}
+		} );
+	} else {
+		resp.status( 503 );
+		resp.send( 'Something went wrong. Doh.' );
+	}
 } );
 
 app.get('/api/articles/most-edited', function ( req, resp ) {
