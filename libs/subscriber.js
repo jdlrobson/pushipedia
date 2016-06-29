@@ -23,6 +23,7 @@ function ping( provider, ids, feature ) {
 	var i, endpoint,
 		body = {},
 		headers = {
+			'TTL': 60,
 			'Content-Type': 'application/json'
 		};
 
@@ -30,6 +31,7 @@ function ping( provider, ids, feature ) {
 	provider = provider || 'google';
 
 	function doUnsubscriptions ( data ) {
+		console.log( 'do unsubscribe', data );
 		if ( feature && data.unsubscribe ) {
 			data.unsubscribe.forEach( function ( subscription ) {
 				console.log( 'unsubscribe', subscription, ' from ', feature, ' and provider', provider );
@@ -51,7 +53,7 @@ function ping( provider, ids, feature ) {
 	} else if ( provider === 'firefox' ) {
 		for( i = 0; i < ids.length; i++ ) {
 			endpoint = 'https://updates.push.services.mozilla.com/push/' + ids[i];
-			pingEndpoint( endpoint, null, null, ids ).then( doUnsubscriptions );
+			pingEndpoint( endpoint, headers, null, [ ids[i] ] ).then( doUnsubscriptions );
 		}
 	} else {
 		throw 'Endpoint is unknown: ' + provider;
@@ -81,9 +83,16 @@ function pingEndpoint( endpoint, headers, body, ids ) {
 	return fetch( endpoint, params ).then( function ( r ) {
 		console.log( endpoint, r.status );
 		// If 404 assume was not a bad URL but bad single ID given to firefox
-		if ( r.status === 404 && ids.length === 1 ) {
+		if ( [ 404, 400 ].indexOf( r.status ) > -1 && ids.length === 1 ) {
 			stale.push( ids[0] );
+			return {
+				unsubscribe: stale
+			};
 		}
+		// Log response code
+		r.text().then( function ( tx ) {
+			console.log( 'error given', tx );
+		} );
 		return r.json();
 	} ).then( function ( json ) {
 		if ( json && json.results ) {
