@@ -83,7 +83,7 @@ function pingEndpoint( endpoint, headers, body, ids ) {
 	return fetch( endpoint, params ).then( function ( r ) {
 		console.log( endpoint, r.status );
 		// If 404 assume was not a bad URL but bad single ID given to firefox
-		if ( [ 404, 400 ].indexOf( r.status ) > -1 && ids.length === 1 ) {
+		if ( [ 404, 400, 410 ].indexOf( r.status ) > -1 && ids.length === 1 ) {
 			stale.push( ids[0] );
 			return {
 				unsubscribe: stale
