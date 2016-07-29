@@ -1,6 +1,6 @@
 var level = require('level');
 var io = require( 'socket.io-client' );
-var subscriber = require( './subscriber' );
+var subscriber = require( 'web-push-subscriber' );
 // David Bowie saw a surge of edits 6.38am-7.08am had 47 in 30m, 30 in 30m that followed
 var EDITS_PER_HOUR = process.env.PUSHIPEDIA_TRENDING_EDITS_PER_HOUR || 30;
 var NUM_EDITORS = process.env.PUSHIPEDIA_TRENDING_MINIMUM_EDITORS || 4;
