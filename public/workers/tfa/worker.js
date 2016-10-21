@@ -11,7 +11,7 @@ self.addEventListener( 'push', function( event ) {
 				body: page.extract,
 				icon: page.thumbnail ? page.thumbnail.source : icon,
 				tag: tag,
-				data: 'https://en.wikipedia.org/wiki/' + page.title + '?referrer=pushipedia'
+				data: 'https://trending.wmflabs.org/wiki/' + page.title + '?referrer=pushipedia'
 		 } )
 		} );
 	} );

@@ -13,7 +13,7 @@ self.addEventListener( 'push', function( event ) {
 				body: page.title + " is receiving an unusual amount of edits (" + page.edits + " in " + mins + " minutes).\n\n" + page.extract,
 				icon: page.thumbnail ? page.thumbnail.source : icon,
 				tag: tag,
-				data: 'https://en.wikipedia.org/wiki/' + page.title + '?referrer=pushipedia'
+				data: 'https://trending.wmflabs.org/en.wikipedia/' + page.title + '?referrer=pushipedia'
 		 } );
 		} );
 	} );

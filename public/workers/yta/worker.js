@@ -11,7 +11,7 @@ self.addEventListener( 'push', function( event ) {
 				body: 'The most read article on Wikipedia yesterday was ' + page.title + '\n\n' + page.extract,
 				icon: page.thumbnail ? page.thumbnail.source : icon,
 				tag: tag,
-				data: 'https://en.wikipedia.org/wiki/' + page.title + '?referrer=pushipedia'
+				data: 'https://trending.wmflabs.org/wiki/' + page.title + '?referrer=pushipedia'
 		 } )
 		} );
 	} );

@@ -11,7 +11,7 @@ self.addEventListener( 'push', function( event ) {
 				body: "The latest photo of the day - " + page.title + " - is now available for your viewing pleasure. What delight awaits you?",
 				icon: page.thumbnail ? page.thumbnail.source : icon,
 				tag: tag,
-				data: 'https://commons.wikimedia.org/wiki/' + page.title + '?referrer=pushipedia'
+				data: 'https://trending.wmflabs.org/en.commons/' + page.title + '?referrer=pushipedia'
 		 } )
 		} );
 	} );
