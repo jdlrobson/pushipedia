@@ -48,7 +48,7 @@ function tfa() {
 	var d = new Date();
 	var month = [ 'January', 'February', 'March', 'April', 'May', 'June',
 		'July', 'August', 'September', 'October', 'November', 'December' ][ d.getMonth() ];
-	var pageTitle = 'Wikipedia:Today\'s_featured_article/' + month + '_' + d.getDate() + ',_' + d.getFullYear();
+	var pageTitle = 'Wikipedia:Today\'s_featured_article%2F' + month + '_' + d.getDate() + ',_' + d.getFullYear();
 	return pageTitle;
 }
 
