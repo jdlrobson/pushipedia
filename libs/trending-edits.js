@@ -1,4 +1,5 @@
 var level = require('level');
+var scorer = require( 'wikipedia-edits-scorer');
 var io = require( 'socket.io-client' );
 var subscriber = require( 'web-push-subscriber' );
 // David Bowie saw a surge of edits 6.38am-7.08am had 47 in 30m, 30 in 30m that followed
@@ -112,8 +113,20 @@ Trender.prototype = {
 		if ( entity.bias > this.maxBias ) {
 			blocked = true;
 		}
+		var score = scorer.calculateScore( new Date(), {
+			edits: entity.edits,
+			anonEdits: entity.anonEdits,
+			start: entity.start,
+			isNew: entity.isNew,
+			reverts: entity.reverts,
+			flaggedEdits: entity.isVolatile ? 1 : 0,
+			distribution: entity.distribution,
+			numberContributors: counted_editors
+		});
 
-		if ( !blocked && counted_editors >= this.minEditors && entity.edits > treshold ) {
+		if ( !blocked && counted_editors >= this.minEditors && entity.edits > treshold
+			&& score > 0
+		) {
 			return true;
 		}
 	},
