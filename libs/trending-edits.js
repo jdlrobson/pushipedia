@@ -251,7 +251,7 @@ function isVolatile( edit ) {
  * @return {Boolean} whether the username indicates an IP thus anon edit.
  */
 function isIP( user ) {
-	var match = user.match( /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[0-9A-E]+:[0-9A-E]+:[0-9A-E]+:[0-9A-E]+:[0-9A-E]+/ );
+	var match = user.match( /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[0-9A-F]+:[0-9A-F]+:[0-9A-F]+:[0-9A-F]+:[0-9A-F]+/ );
 	return match && match[0];
 }
 
